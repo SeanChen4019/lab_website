@@ -219,9 +219,49 @@ router.get('/achievements', async (req, res) => {
       projects,
       patents,
       papers,
+      pubDirections: Array.from(new Set(papers.map(item => item.direction).filter(Boolean))),
       journalPapers: papers.filter(item => (item.pub_type || 'journal') === 'journal'),
       conferencePapers: papers.filter(item => item.pub_type === 'conference')
     });
+  } catch (error) {
+    console.error(error);
+    res.status(500).render('error', { title: '错误', message: '页面加载失败', code: 500 });
+  }
+});
+
+// 论文详情
+router.get('/paper/:id', async (req, res) => {
+  try {
+    const paper = await db.get(
+      'SELECT * FROM papers WHERE id = ? AND is_active = 1',
+      [req.params.id]
+    );
+
+    if (!paper) {
+      return res.status(404).render('error', { title: '未找到', message: '论文不存在', code: 404 });
+    }
+
+    // 同研究方向的其他论文，最多 5 篇
+    let related = [];
+    if (paper.direction) {
+      related = await db.all(
+        'SELECT id, title, venue, year, level, pub_type FROM papers WHERE is_active = 1 AND direction = ? AND id != ? ORDER BY year DESC, sort_order ASC, id ASC LIMIT 5',
+        [paper.direction, paper.id]
+      );
+    }
+    if (related.length < 3) {
+      const more = await db.all(
+        'SELECT id, title, venue, year, level, pub_type FROM papers WHERE is_active = 1 AND id != ? ORDER BY year DESC, sort_order ASC, id ASC LIMIT 6',
+        [paper.id]
+      );
+      const seen = new Set(related.map(item => item.id));
+      for (const item of more) {
+        if (related.length >= 5) break;
+        if (!seen.has(item.id)) { related.push(item); seen.add(item.id); }
+      }
+    }
+
+    res.render('paper-detail', { title: paper.title, paper, related });
   } catch (error) {
     console.error(error);
     res.status(500).render('error', { title: '错误', message: '页面加载失败', code: 500 });

@@ -97,6 +97,25 @@ async function getDb() {
       )
     `);
 
+    // 论文详情字段：以增量迁移方式加入，绝不覆盖现有论文数据。
+    // 详情页 /paper/:id 依赖这些字段（摘要、图文正文、论文与代码链接）。
+    const paperColumns = new Set();
+    const paperColumnStatement = db.prepare('PRAGMA table_info(papers)');
+    while (paperColumnStatement.step()) paperColumns.add(paperColumnStatement.getAsObject().name);
+    paperColumnStatement.free();
+    const paperProfileColumns = {
+      abstract: "TEXT DEFAULT ''",
+      content: "TEXT DEFAULT ''",
+      cover_image: "TEXT DEFAULT ''",
+      pdf_url: "TEXT DEFAULT ''",
+      code_url: "TEXT DEFAULT ''",
+      doi: "TEXT DEFAULT ''",
+      direction: "TEXT DEFAULT ''"
+    };
+    for (const [column, definition] of Object.entries(paperProfileColumns)) {
+      if (!paperColumns.has(column)) db.run(`ALTER TABLE papers ADD COLUMN ${column} ${definition}`);
+    }
+
     db.run(`
       CREATE TABLE IF NOT EXISTS social_posts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

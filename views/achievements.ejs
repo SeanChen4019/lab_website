@@ -76,38 +76,152 @@
       </div>
       <div class="card-body">
         <% if (papers.length) { %>
-          <h3 class="paper-group-title">期刊论文</h3>
-          <ol class="paper-list">
-            <% journalPapers.forEach(function(item) { %>
-              <li class="paper-row">
-                <div class="paper-main">
-                  <h3><%= item.title %></h3>
-                  <p class="paper-meta"><span class="paper-venue"><%= item.venue %></span><% if (item.year) { %><span><%= item.year %></span><% } %><% if (item.authors) { %><span class="paper-authors"><%= item.authors %></span><% } %></p>
+          <div class="pub-toolbar">
+            <div class="pub-search">
+              <label class="sr-only" for="pubSearch">搜索论文</label>
+              <input id="pubSearch" type="search" placeholder="搜索标题、作者、期刊…" autocomplete="off">
+              <i class="fas fa-search" aria-hidden="true"></i>
+            </div>
+            <label class="sr-only" for="pubYear">按年份筛选</label>
+            <select class="pub-select" id="pubYear">
+              <option value="">全部年份</option>
+            </select>
+            <label class="sr-only" for="pubType">按类型筛选</label>
+            <select class="pub-select" id="pubType">
+              <option value="">全部类型</option>
+              <option value="journal">期刊论文</option>
+              <option value="conference">会议论文</option>
+            </select>
+            <% if (typeof pubDirections !== 'undefined' && pubDirections.length) { %>
+              <label class="sr-only" for="pubDirection">按研究方向筛选</label>
+              <select class="pub-select" id="pubDirection">
+                <option value="">全部方向</option>
+                <% pubDirections.forEach(function(direction) { %>
+                  <option value="<%= direction %>"><%= direction %></option>
+                <% }); %>
+              </select>
+            <% } %>
+            <span class="pub-count"><b id="pubCount"><%= papers.length %></b> 篇</span>
+          </div>
+          <div id="pubList">
+            <%
+              // 服务端直接渲染完整列表，保证搜索引擎与禁用 JS 时同样可读；
+              // 前端脚本只负责按条件显示/隐藏，不重新生成内容。
+              const pubGroups = [];
+              papers.forEach(function (item) {
+                const yearKey = item.year || 0;
+                const last = pubGroups[pubGroups.length - 1];
+                if (last && last.year === yearKey) last.items.push(item);
+                else pubGroups.push({ year: yearKey, items: [item] });
+              });
+            %>
+            <% pubGroups.forEach(function (group) { %>
+              <div class="pub-year-group">
+                <div class="pub-year">
+                  <b><%= group.year || '未标注年份' %></b><i></i>
+                  <span data-group-count><%= group.items.length %> 篇</span>
                 </div>
-                <% if (item.level) { %><span class="paper-level"><%= item.level %></span><% } %>
-              </li>
+                <% group.items.forEach(function (item) {
+                     const isConference = item.pub_type === 'conference';
+                     const pdfUrl = item.pdf_url || item.link || '';
+                     const doiUrl = item.doi ? 'https://doi.org/' + item.doi : '';
+                     const searchText = [item.title, item.authors, item.venue, item.abstract].filter(Boolean).join(' ').toLowerCase();
+                %>
+                  <article class="pub-item"
+                           data-year="<%= group.year %>"
+                           data-type="<%= isConference ? 'conference' : 'journal' %>"
+                           data-direction="<%= item.direction || '' %>"
+                           data-search="<%= searchText %>">
+                    <div class="pub-kicker">
+                      <span class="pub-tag<%= isConference ? ' is-conf' : '' %>"><%= isConference ? '会议论文' : '期刊论文' %></span>
+                      <% if (item.level) { %><span class="pub-tag"><%= item.level %></span><% } %>
+                      <% if (item.direction) { %><span class="pub-tag is-dir"><%= item.direction %></span><% } %>
+                      <% if (item.venue) { %><span class="pub-venue"><%= item.venue %></span><% } %>
+                      <% if (item.year) { %><span><%= item.year %></span><% } %>
+                    </div>
+                    <h3 class="pub-title"><a href="/paper/<%= item.id %>"><%= item.title %></a></h3>
+                    <% if (item.authors) { %><p class="pub-authors"><%= item.authors %></p><% } %>
+                    <% if (item.abstract) { %><p class="pub-abstract"><%= item.abstract %></p><% } %>
+                    <div class="pub-links">
+                      <% if (pdfUrl) { %><a class="pub-link" href="<%= pdfUrl %>" target="_blank" rel="noopener">论文</a><% } %>
+                      <% if (item.code_url) { %><a class="pub-link is-code" href="<%= item.code_url %>" target="_blank" rel="noopener">代码</a><% } %>
+                      <% if (doiUrl) { %><a class="pub-link" href="<%= doiUrl %>" target="_blank" rel="noopener">DOI</a><% } %>
+                      <a class="pub-link is-more" href="/paper/<%= item.id %>">详情</a>
+                    </div>
+                  </article>
+                <% }); %>
+              </div>
             <% }); %>
-          </ol>
-          <% if (conferencePapers.length) { %>
-            <h3 class="paper-group-title">会议论文</h3>
-            <ol class="paper-list">
-              <% conferencePapers.forEach(function(item) { const idx = papers.indexOf(item) + 1; %>
-                <li class="paper-row">
-                  <div class="paper-main">
-                    <h3><%= item.title %></h3>
-                    <p class="paper-meta"><span class="paper-venue"><%= item.venue %></span><% if (item.year) { %><span><%= item.year %></span><% } %><% if (item.authors) { %><span class="paper-authors"><%= item.authors %></span><% } %></p>
-                  </div>
-                  <% if (item.level) { %><span class="paper-level is-conf"><%= item.level %></span><% } %>
-                </li>
-              <% }); %>
-            </ol>
-          <% } %>
+            <div class="pub-empty" id="pubEmpty" hidden>没有符合当前筛选条件的论文</div>
+          </div>
         <% } else { %>
-          <p class="people-empty-inline">暂无论文资料。</p>
+          <p class="people-empty-inline">暂无论文资料，可在后台“论文管理”中添加。</p>
         <% } %>
       </div>
     </section>
   </div>
 </section>
+
+<% if (papers.length) { %>
+<script>
+  (function () {
+    const list = document.getElementById('pubList');
+    if (!list) return;
+
+    const searchInput = document.getElementById('pubSearch');
+    const yearSelect = document.getElementById('pubYear');
+    const typeSelect = document.getElementById('pubType');
+    const directionSelect = document.getElementById('pubDirection');
+    const countLabel = document.getElementById('pubCount');
+    const emptyState = document.getElementById('pubEmpty');
+    const items = Array.prototype.slice.call(list.querySelectorAll('.pub-item'));
+    const groups = Array.prototype.slice.call(list.querySelectorAll('.pub-year-group'));
+
+    // 列表已由服务端渲染，这里只做筛选：年份下拉按实际数据生成。
+    const years = Array.from(new Set(items.map(function (item) { return item.dataset.year; })))
+      .filter(function (year) { return year && year !== '0'; })
+      .sort(function (a, b) { return Number(b) - Number(a); });
+    years.forEach(function (year) {
+      const option = document.createElement('option');
+      option.value = year;
+      option.textContent = year + ' 年';
+      yearSelect.appendChild(option);
+    });
+
+    function apply() {
+      const keyword = (searchInput.value || '').trim().toLowerCase();
+      const year = yearSelect.value;
+      const type = typeSelect.value;
+      const direction = directionSelect ? directionSelect.value : '';
+      let visible = 0;
+
+      items.forEach(function (item) {
+        let show = true;
+        if (year && item.dataset.year !== year) show = false;
+        if (type && item.dataset.type !== type) show = false;
+        if (direction && item.dataset.direction !== direction) show = false;
+        if (keyword && (item.dataset.search || '').indexOf(keyword) === -1) show = false;
+        item.hidden = !show;
+        if (show) visible++;
+      });
+
+      groups.forEach(function (group) {
+        const shown = group.querySelectorAll('.pub-item:not([hidden])').length;
+        group.hidden = shown === 0;
+        const counter = group.querySelector('[data-group-count]');
+        if (counter) counter.textContent = shown + ' 篇';
+      });
+
+      countLabel.textContent = visible;
+      emptyState.hidden = visible !== 0;
+    }
+
+    searchInput.addEventListener('input', apply);
+    yearSelect.addEventListener('change', apply);
+    typeSelect.addEventListener('change', apply);
+    if (directionSelect) directionSelect.addEventListener('change', apply);
+  })();
+</script>
+<% } %>
 
 <%- include('partials/footer') %>

@@ -1,0 +1,120 @@
+<%- include('partials/header') %>
+
+<%
+  const isConference = paper.pub_type === 'conference';
+  const pdfUrl = paper.pdf_url || paper.link || '';
+  const doiUrl = paper.doi ? 'https://doi.org/' + paper.doi : '';
+  const hasLinks = pdfUrl || paper.code_url || doiUrl;
+%>
+
+<section class="page-banner">
+  <div class="container">
+    <h1>论文详情</h1>
+    <p><%= paper.venue || '研究成果' %><%= paper.year ? ' · ' + paper.year : '' %></p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container">
+    <div class="content-card">
+      <div class="card-body">
+        <header class="paper-detail-head">
+          <div class="pub-kicker">
+            <span class="pub-tag<%= isConference ? ' is-conf' : '' %>"><%= isConference ? '会议论文' : '期刊论文' %></span>
+            <% if (paper.level) { %><span class="pub-tag"><%= paper.level %></span><% } %>
+            <% if (paper.direction) { %><span class="pub-tag is-dir"><%= paper.direction %></span><% } %>
+          </div>
+
+          <h1><%= paper.title %></h1>
+
+          <% if (paper.authors) { %>
+            <p class="paper-detail-authors"><i class="fas fa-users"></i> <%= paper.authors %></p>
+          <% } %>
+
+          <p class="paper-detail-meta">
+            <% if (paper.venue) { %><span><i class="fas fa-book"></i><%= paper.venue %></span><% } %>
+            <% if (paper.year) { %><span><i class="far fa-calendar-alt"></i><%= paper.year %> 年</span><% } %>
+            <% if (paper.doi) { %><span><i class="fas fa-fingerprint"></i>DOI: <%= paper.doi %></span><% } %>
+          </p>
+        </header>
+
+        <% if (hasLinks) { %>
+          <nav class="paper-links-bar" aria-label="论文相关链接">
+            <% if (pdfUrl) { %>
+              <a class="pub-link" href="<%= pdfUrl %>" target="_blank" rel="noopener"><i class="fas fa-file-pdf"></i> 论文原文</a>
+            <% } %>
+            <% if (paper.code_url) { %>
+              <a class="pub-link is-code" href="<%= paper.code_url %>" target="_blank" rel="noopener"><i class="fas fa-code"></i> 代码仓库</a>
+            <% } %>
+            <% if (doiUrl) { %>
+              <a class="pub-link" href="<%= doiUrl %>" target="_blank" rel="noopener"><i class="fas fa-link"></i> DOI 页面</a>
+            <% } %>
+          </nav>
+        <% } %>
+
+        <% if (paper.abstract) { %>
+          <section class="paper-abstract">
+            <h2>Abstract · 摘要</h2>
+            <p><%= paper.abstract %></p>
+          </section>
+        <% } %>
+
+        <% if (paper.cover_image) { %>
+          <figure class="paper-cover">
+            <img src="<%= paper.cover_image %>" alt="<%= paper.title %>">
+          </figure>
+        <% } %>
+
+        <% if (paper.content) { %>
+          <div class="paper-body">
+            <div class="article-content">
+              <%- paper.content %>
+            </div>
+          </div>
+        <% } %>
+
+        <% if (!paper.abstract && !paper.content && !paper.cover_image) { %>
+          <p class="pub-empty">该论文暂未填写简介，可在后台“论文管理”中补充摘要与图文说明。</p>
+        <% } %>
+
+        <% if (related && related.length) { %>
+          <section class="paper-related">
+            <h2><i class="fas fa-layer-group"></i> 相关论文</h2>
+            <ul>
+              <% related.forEach(function (item) { %>
+                <li>
+                  <a href="/paper/<%= item.id %>"><%= item.title %></a>
+                  <small><%= item.venue || '' %><%= item.venue && item.year ? ' · ' : '' %><%= item.year || '' %></small>
+                </li>
+              <% }); %>
+            </ul>
+          </section>
+        <% } %>
+      </div>
+
+      <div class="card-footer">
+        <a href="/achievements#papers" class="back-btn">
+          <i class="fas fa-arrow-left"></i> 返回研究成果
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script type="application/ld+json">
+<%- JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'ScholarlyArticle',
+  headline: paper.title,
+  author: (paper.authors || '').split(',').map(function (name) { return { '@type': 'Person', name: name.trim() }; }).filter(function (item) { return item.name; }),
+  inLanguage: 'zh-CN',
+  name: paper.title,
+  abstract: paper.abstract || undefined,
+  datePublished: paper.year ? String(paper.year) : undefined,
+  isPartOf: paper.venue ? { '@type': 'Periodical', name: paper.venue } : undefined,
+  identifier: paper.doi || undefined,
+  url: pdfUrl || undefined
+}).replace(/</g, '\\u003c') %>
+</script>
+
+<%- include('partials/footer') %>

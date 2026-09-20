@@ -62,7 +62,10 @@ const LIMITS = {
   patent_no: 100,
   inventors: 500,
   authors: 500,
-  venue: 300
+  venue: 300,
+  abstract: 5000,
+  direction: 100,
+  doi: 200
 };
 
 function validateLengths(fields) {
@@ -116,6 +119,14 @@ function normalizeUrl(value, options = {}) {
   } catch (error) {
     return null;
   }
+}
+
+// DOI 允许写成 "10.1109/TWC.2025.1234567" 或完整链接，统一存成裸 DOI。
+function normalizeDoi(value) {
+  let text = String(value || '').trim();
+  if (!text) return '';
+  text = text.replace(/^https?:\/\/(dx\.)?doi\.org\//i, '').replace(/^doi:\s*/i, '').trim();
+  return text.length <= 200 ? text : null;
 }
 
 function cleanRichContent(content = '') {
@@ -935,9 +946,12 @@ router.get('/papers', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/papers', authMiddleware, validateLengths(['title', 'authors', 'venue']), async (req, res) => {
+router.post('/papers', authMiddleware, validateLengths(['title', 'authors', 'venue', 'abstract', 'direction', 'doi']), async (req, res) => {
   try {
-    const { title, authors, venue, year, level, pub_type, link, sort_order, is_active = 1 } = req.body;
+    const {
+      title, authors, venue, year, level, pub_type, link, sort_order, is_active = 1,
+      abstract, content, cover_image, pdf_url, code_url, doi, direction
+    } = req.body;
     const checkedTitle = requiredText(title, '论文标题', LIMITS.title);
     if (checkedTitle.error) return res.status(400).json({ success: false, message: checkedTitle.error });
     if (!['journal', 'conference'].includes(pub_type)) return res.status(400).json({ success: false, message: '请选择论文类型' });
@@ -945,9 +959,23 @@ router.post('/papers', authMiddleware, validateLengths(['title', 'authors', 'ven
     if (checkedYear === undefined || checkedYear === null) return res.status(400).json({ success: false, message: '发表年份应在1900至2100之间' });
     const checkedLink = normalizeUrl(link);
     if (checkedLink === null) return res.status(400).json({ success: false, message: '论文链接地址不正确' });
+    const checkedPdf = normalizeUrl(pdf_url);
+    if (checkedPdf === null) return res.status(400).json({ success: false, message: '论文 PDF 链接地址不正确' });
+    const checkedCode = normalizeUrl(code_url);
+    if (checkedCode === null) return res.status(400).json({ success: false, message: '代码链接地址不正确' });
+    const checkedCover = normalizeUrl(cover_image);
+    if (checkedCover === null) return res.status(400).json({ success: false, message: '封面图地址不正确' });
+    const checkedDoi = normalizeDoi(doi);
+    if (checkedDoi === null) return res.status(400).json({ success: false, message: 'DOI 最多200字' });
     const result = await db.run(
-      'INSERT INTO papers (title, authors, venue, year, level, pub_type, link, sort_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [checkedTitle.value, authors || '', venue || '', checkedYear, level || '', pub_type, checkedLink, Number(sort_order) || 0, normalizeFlag(is_active, 1)]
+      `INSERT INTO papers
+        (title, authors, venue, year, level, pub_type, link, sort_order, is_active,
+         abstract, content, cover_image, pdf_url, code_url, doi, direction)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [checkedTitle.value, authors || '', venue || '', checkedYear, level || '', pub_type, checkedLink,
+       Number(sort_order) || 0, normalizeFlag(is_active, 1),
+       String(abstract || '').trim(), cleanRichContent(content), checkedCover, checkedPdf, checkedCode,
+       checkedDoi, String(direction || '').trim()]
     );
     res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/achievements#papers' });
   } catch (error) {
@@ -955,9 +983,12 @@ router.post('/papers', authMiddleware, validateLengths(['title', 'authors', 'ven
   }
 });
 
-router.put('/papers/:id', authMiddleware, validateLengths(['title', 'authors', 'venue']), async (req, res) => {
+router.put('/papers/:id', authMiddleware, validateLengths(['title', 'authors', 'venue', 'abstract', 'direction', 'doi']), async (req, res) => {
   try {
-    const { title, authors, venue, year, level, pub_type, link, sort_order, is_active } = req.body;
+    const {
+      title, authors, venue, year, level, pub_type, link, sort_order, is_active,
+      abstract, content, cover_image, pdf_url, code_url, doi, direction
+    } = req.body;
     const checkedTitle = requiredText(title, '论文标题', LIMITS.title);
     if (checkedTitle.error) return res.status(400).json({ success: false, message: checkedTitle.error });
     if (!['journal', 'conference'].includes(pub_type)) return res.status(400).json({ success: false, message: '请选择论文类型' });
@@ -965,9 +996,24 @@ router.put('/papers/:id', authMiddleware, validateLengths(['title', 'authors', '
     if (checkedYear === undefined || checkedYear === null) return res.status(400).json({ success: false, message: '发表年份应在1900至2100之间' });
     const checkedLink = normalizeUrl(link);
     if (checkedLink === null) return res.status(400).json({ success: false, message: '论文链接地址不正确' });
+    const checkedPdf = normalizeUrl(pdf_url);
+    if (checkedPdf === null) return res.status(400).json({ success: false, message: '论文 PDF 链接地址不正确' });
+    const checkedCode = normalizeUrl(code_url);
+    if (checkedCode === null) return res.status(400).json({ success: false, message: '代码链接地址不正确' });
+    const checkedCover = normalizeUrl(cover_image);
+    if (checkedCover === null) return res.status(400).json({ success: false, message: '封面图地址不正确' });
+    const checkedDoi = normalizeDoi(doi);
+    if (checkedDoi === null) return res.status(400).json({ success: false, message: 'DOI 最多200字' });
     await db.run(
-      'UPDATE papers SET title = ?, authors = ?, venue = ?, year = ?, level = ?, pub_type = ?, link = ?, sort_order = ?, is_active = ? WHERE id = ?',
-      [checkedTitle.value, authors || '', venue || '', checkedYear, level || '', pub_type, checkedLink, Number(sort_order) || 0, normalizeFlag(is_active, 1), req.params.id]
+      `UPDATE papers SET
+        title = ?, authors = ?, venue = ?, year = ?, level = ?, pub_type = ?, link = ?,
+        sort_order = ?, is_active = ?, abstract = ?, content = ?, cover_image = ?,
+        pdf_url = ?, code_url = ?, doi = ?, direction = ?
+       WHERE id = ?`,
+      [checkedTitle.value, authors || '', venue || '', checkedYear, level || '', pub_type, checkedLink,
+       Number(sort_order) || 0, normalizeFlag(is_active, 1),
+       String(abstract || '').trim(), cleanRichContent(content), checkedCover, checkedPdf, checkedCode,
+       checkedDoi, String(direction || '').trim(), req.params.id]
     );
     res.json({ success: true, message: '更新成功' });
   } catch (error) {

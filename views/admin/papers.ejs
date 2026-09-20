@@ -36,6 +36,7 @@
                 <th>期刊/会议</th>
                 <th>年份</th>
                 <th>类型</th>
+                <th>简介</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -47,7 +48,7 @@
   </div>
 
   <div class="modal-overlay" id="paperModal">
-    <div class="modal" style="width: 720px;">
+    <div class="modal" style="width: 940px;">
       <div class="modal-header">
         <h3 id="modalTitle">添加论文</h3>
         <button class="modal-close" onclick="closeModal()">&times;</button>
@@ -55,14 +56,17 @@
       <div class="modal-body">
         <form id="paperForm">
           <input type="hidden" id="paperId">
+
           <div class="form-group">
             <label>论文标题 *</label>
             <input type="text" id="paperTitle" required>
           </div>
+
           <div class="form-group">
             <label>作者（如 Qihui Wu, Fuhui Zhou, et al.）</label>
             <input type="text" id="paperAuthors">
           </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>期刊/会议名称 *</label>
@@ -73,6 +77,7 @@
               <input type="number" id="paperYear" min="1900" max="2100" required>
             </div>
           </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>类型</label>
@@ -86,6 +91,10 @@
               <input type="text" id="paperLevel" placeholder="如 SCI一区 / CCF-A">
             </div>
             <div class="form-group">
+              <label>研究方向</label>
+              <input type="text" id="paperDirection" placeholder="如 频谱认知">
+            </div>
+            <div class="form-group">
               <label>是否显示</label>
               <select id="paperActive">
                 <option value="1">显示</option>
@@ -93,22 +102,103 @@
               </select>
             </div>
           </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>论文链接（PDF / 出版社页面）</label>
+              <input type="text" id="paperPdfUrl" placeholder="https://...">
+            </div>
+            <div class="form-group">
+              <label>代码链接</label>
+              <input type="text" id="paperCodeUrl" placeholder="https://github.com/...">
+            </div>
+            <div class="form-group">
+              <label>DOI</label>
+              <input type="text" id="paperDoi" placeholder="10.1109/TWC.2025.1234567">
+            </div>
+          </div>
+
           <div class="form-group">
-            <label>论文链接（可留空）</label>
-            <input type="text" id="paperLink" placeholder="https://...">
+            <label>摘要（列表页显示前 3 行，详情页顶部摘要框）</label>
+            <textarea id="paperAbstract" rows="5" placeholder="用一段话概括论文解决的问题、方法与结论。"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>封面图（可选，详情页摘要下方展示）</label>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <label class="publisher-upload-btn" style="cursor:pointer;padding:7px 14px;border:1px solid #ddd;border-radius:6px;background:#fafafa;font-size:13px;">
+                <i class="fas fa-image"></i> 上传封面图
+                <input type="file" accept="image/*" hidden onchange="uploadToField(this, 'paperCoverImage', 'paperCoverPreview')">
+              </label>
+              <button type="button" class="btn btn-sm btn-secondary" onclick="clearCover()">清除</button>
+              <img id="paperCoverPreview" alt="封面预览" style="display:none;max-height:70px;border:1px solid #e5e5e5;border-radius:4px;">
+            </div>
+            <input type="hidden" id="paperCoverImage">
+          </div>
+
+          <div class="form-group">
+            <label>论文简介正文（可插入图片、公式截图、表格截图，自由排版）</label>
+            <textarea id="paperContent" rows="8" placeholder="可写研究背景、方法、实验结果、图表说明等。"></textarea>
           </div>
         </form>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+        <button class="btn btn-warning" onclick="previewPaper()"><i class="fas fa-eye"></i> 发布预览</button>
         <button class="btn btn-primary" onclick="savePaper()">保存</button>
       </div>
     </div>
   </div>
 
+  <script src="/js/admin-editor.js"></script>
   <script>
     const token = localStorage.getItem('token');
     let papers = [];
+    const paperEditor = new RichPublisher('paperContent', { token: () => token });
+
+    async function uploadToField(input, fieldId, previewId) {
+      if (!input.files[0]) return;
+      const form = new FormData();
+      form.append('file', input.files[0]);
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token },
+          body: form
+        });
+        const data = await response.json();
+        if (!data.success) return alert(data.message || '上传失败');
+        document.getElementById(fieldId).value = data.url;
+        if (previewId) {
+          const preview = document.getElementById(previewId);
+          preview.src = data.url;
+          preview.style.display = 'inline-block';
+        }
+      } catch (error) {
+        alert('上传失败');
+      } finally {
+        input.value = '';
+      }
+    }
+
+    function clearCover() {
+      document.getElementById('paperCoverImage').value = '';
+      const preview = document.getElementById('paperCoverPreview');
+      preview.removeAttribute('src');
+      preview.style.display = 'none';
+    }
+
+    function setCover(url) {
+      document.getElementById('paperCoverImage').value = url || '';
+      const preview = document.getElementById('paperCoverPreview');
+      if (url) {
+        preview.src = url;
+        preview.style.display = 'inline-block';
+      } else {
+        preview.removeAttribute('src');
+        preview.style.display = 'none';
+      }
+    }
 
     async function loadPapers() {
       try {
@@ -125,21 +215,33 @@
       }
     }
 
+    function hasIntro(p) {
+      return Boolean((p.abstract || '').trim() || (p.content || '').trim() || p.cover_image);
+    }
+
     function renderPapers() {
       const tbody = document.getElementById('papersTable');
       tbody.innerHTML = papers.map(p => `
         <tr>
           <td>${p.id}</td>
-          <td>${p.title}</td>
-          <td>${p.venue || '-'}</td>
+          <td>${escapeHtml(p.title)}</td>
+          <td>${escapeHtml(p.venue || '-')}</td>
           <td>${p.year || '-'}</td>
           <td>${p.pub_type === 'conference' ? '会议' : '期刊'}</td>
+          <td>${hasIntro(p) ? '<span style="color:#2e7d32;">已填写</span>' : '<span style="color:#b26a00;">待补充</span>'}</td>
           <td class="actions">
-            <button class="btn btn-sm btn-primary" onclick="editPaper(${p.id})"><i class="fas fa-edit"></i></button>
-            <button class="btn btn-sm btn-danger" onclick="deletePaper(${p.id})"><i class="fas fa-trash"></i></button>
+            <a class="btn btn-sm btn-secondary" href="/paper/${p.id}" target="_blank" rel="noopener" title="前台预览"><i class="fas fa-eye"></i></a>
+            <button class="btn btn-sm btn-primary" onclick="editPaper(${p.id})" title="编辑"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="deletePaper(${p.id})" title="删除"><i class="fas fa-trash"></i></button>
           </td>
         </tr>
       `).join('');
+    }
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+      });
     }
 
     function showAddModal() {
@@ -151,8 +253,14 @@
       document.getElementById('paperYear').value = new Date().getFullYear();
       document.getElementById('paperType').value = 'journal';
       document.getElementById('paperLevel').value = '';
-      document.getElementById('paperLink').value = '';
+      document.getElementById('paperDirection').value = '';
+      document.getElementById('paperPdfUrl').value = '';
+      document.getElementById('paperCodeUrl').value = '';
+      document.getElementById('paperDoi').value = '';
+      document.getElementById('paperAbstract').value = '';
       document.getElementById('paperActive').value = '1';
+      setCover('');
+      paperEditor.setContent('');
       document.getElementById('paperModal').classList.add('active');
     }
 
@@ -161,14 +269,20 @@
       if (!p) return;
       document.getElementById('modalTitle').textContent = '编辑论文';
       document.getElementById('paperId').value = p.id;
-      document.getElementById('paperTitle').value = p.title;
+      document.getElementById('paperTitle').value = p.title || '';
       document.getElementById('paperAuthors').value = p.authors || '';
       document.getElementById('paperVenue').value = p.venue || '';
       document.getElementById('paperYear').value = p.year || new Date().getFullYear();
       document.getElementById('paperType').value = p.pub_type || 'journal';
       document.getElementById('paperLevel').value = p.level || '';
-      document.getElementById('paperLink').value = p.link || '';
+      document.getElementById('paperDirection').value = p.direction || '';
+      document.getElementById('paperPdfUrl').value = p.pdf_url || '';
+      document.getElementById('paperCodeUrl').value = p.code_url || '';
+      document.getElementById('paperDoi').value = p.doi || '';
+      document.getElementById('paperAbstract').value = p.abstract || '';
       document.getElementById('paperActive').value = p.is_active;
+      setCover(p.cover_image || '');
+      paperEditor.setContent(p.content || '');
       document.getElementById('paperModal').classList.add('active');
     }
 
@@ -176,18 +290,37 @@
       document.getElementById('paperModal').classList.remove('active');
     }
 
-    async function savePaper() {
-      const id = document.getElementById('paperId').value;
-      const payload = {
+    function collectPayload() {
+      return {
         title: document.getElementById('paperTitle').value,
         authors: document.getElementById('paperAuthors').value,
         venue: document.getElementById('paperVenue').value,
-        year: parseInt(document.getElementById('paperYear').value),
+        year: parseInt(document.getElementById('paperYear').value, 10),
         pub_type: document.getElementById('paperType').value,
         level: document.getElementById('paperLevel').value,
-        link: document.getElementById('paperLink').value,
-        is_active: parseInt(document.getElementById('paperActive').value)
+        direction: document.getElementById('paperDirection').value,
+        pdf_url: document.getElementById('paperPdfUrl').value,
+        code_url: document.getElementById('paperCodeUrl').value,
+        doi: document.getElementById('paperDoi').value,
+        abstract: document.getElementById('paperAbstract').value,
+        cover_image: document.getElementById('paperCoverImage').value,
+        content: paperEditor.getContent(),
+        is_active: parseInt(document.getElementById('paperActive').value, 10)
       };
+    }
+
+    function previewPaper() {
+      const payload = collectPayload();
+      const meta = [payload.venue, payload.year, payload.level, payload.direction].filter(Boolean).join(' · ');
+      paperEditor.preview(payload.title, meta);
+    }
+
+    async function savePaper() {
+      const id = document.getElementById('paperId').value;
+      const payload = collectPayload();
+      if (!payload.title.trim()) return alert('请填写论文标题');
+      if (!payload.venue.trim()) return alert('请填写期刊/会议名称');
+      if (!payload.year) return alert('请填写发表年份');
       try {
         const url = id ? `/api/papers/${id}` : '/api/papers';
         const method = id ? 'PUT' : 'POST';
