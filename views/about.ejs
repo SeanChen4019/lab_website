@@ -1,0 +1,168 @@
+<%- include('partials/header') %>
+
+<section class="page-banner">
+  <div class="container">
+    <h1><i class="fas fa-info-circle"></i> 实验室概况</h1>
+    <p>了解电磁频谱认知智能通信实验室</p>
+  </div>
+</section>
+
+<section class="page-content about-page">
+  <div class="container">
+    <div class="content-card" id="intro">
+      <div class="card-header">
+        <h2><i class="fas fa-university"></i> 实验室简介</h2>
+      </div>
+      <div class="card-body" data-cms-type="page-content" data-cms-id="about-intro" data-cms-label="实验室简介">
+        <% if (siteSettings.page_content_about_intro) { %>
+          <%- siteSettings.page_content_about_intro %>
+        <% } else { %>
+          <p>电磁频谱认知智能通信实验室成立于2016年，依托南京航空航天大学电子信息工程学院建设，面向天地一体化网络和电磁频谱空间的国家战略需求开展基础理论、关键技术、系统平台与人才培养工作。</p>
+          <p>实验室围绕“一个核心、两个飞翼、四个特色”布局研究：以认知为核心，以电磁频谱空间与天地一体化网络为两个主要应用领域，将认知理论与航空、航天、民航、国防特色相结合。</p>
+          <p>团队于2022年入选南京航空航天大学首批百强创新团队，以中国工程院贲德院士、中国科学院尹浩院士、新加坡工程院马凯光院士为指导，以吴启晖教授为团队负责人，形成了结构完整、交叉融合的科研与人才培养队伍。</p>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="content-card" id="leader">
+      <div class="card-header">
+        <h2><i class="fas fa-user-tie"></i> 实验室负责人</h2>
+      </div>
+      <div class="card-body">
+        <% if (typeof leader !== 'undefined' && leader) { %>
+          <div class="leader-showcase">
+            <a class="leader-photo" href="/team/<%= leader.id %>">
+              <% if (leader.photo_url) { %>
+                <img src="<%= leader.photo_url %>" alt="<%= leader.name %>" loading="lazy">
+              <% } else { %>
+                <span class="leader-photo-fallback"><%= (leader.name || '?').slice(0, 1) %></span>
+              <% } %>
+            </a>
+            <div class="leader-copy">
+              <h3><%= leader.name %></h3>
+              <p class="leader-title"><%= leader.title || '教授/博士生导师' %> · 实验室主任</p>
+              <% if (leader.research_area) { %><p class="leader-area"><i class="fas fa-flask"></i> 研究方向：<%= leader.research_area %></p><% } %>
+              <p class="leader-bio"><%= leader.bio %></p>
+              <div class="leader-actions">
+                <a class="leader-btn" href="/team/<%= leader.id %>">查看个人主页 <i aria-hidden="true">→</i></a>
+                <% if (leader.email) { %><a class="leader-btn is-ghost" href="mailto:<%= leader.email %>"><i class="fas fa-envelope"></i> <%= leader.email %></a><% } %>
+              </div>
+            </div>
+          </div>
+          <% if (typeof leaderTeam !== 'undefined' && leaderTeam.length > 1) { %>
+            <div class="leader-side">
+              <h4>实验室领导团队</h4>
+              <div class="leader-side-list">
+                <% leaderTeam.slice(1).forEach(function(person) { %>
+                  <a class="leader-side-item" href="/team/<%= person.id %>">
+                    <% if (person.photo_url) { %>
+                      <img src="<%= person.photo_url %>" alt="<%= person.name %>" loading="lazy">
+                    <% } else { %>
+                      <span class="leader-side-fallback"><%= (person.name || '?').slice(0, 1) %></span>
+                    <% } %>
+                    <span class="leader-side-copy"><b><%= person.name %></b><small><%= person.title || '' %> · 实验室副主任</small></span>
+                  </a>
+                <% }); %>
+              </div>
+            </div>
+          <% } %>
+        <% } else { %>
+          <p class="people-empty-inline">负责人资料即将上线，可在后台“团队成员”中设置。</p>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <div class="card-header">
+        <h2><i class="fas fa-bullseye"></i> 研究目标</h2>
+      </div>
+      <div class="card-body">
+        <div class="goals-grid">
+          <div class="goal-item">
+            <div class="goal-icon"><i class="fas fa-satellite"></i></div>
+              <h3>一个核心</h3>
+              <p>以认知与决策信息理论为核心，研究智能信息获取、学习与决策</p>
+          </div>
+          <div class="goal-item">
+            <div class="goal-icon"><i class="fas fa-brain"></i></div>
+              <h3>天地一体化网络</h3>
+              <p>研究卫星、航空平台、临近空间和地面网络的多层协同</p>
+          </div>
+          <div class="goal-item">
+            <div class="goal-icon"><i class="fas fa-shield-alt"></i></div>
+              <h3>电磁频谱空间</h3>
+              <p>研究频谱感知、共享、动态授权、优化利用与安全管控</p>
+          </div>
+          <div class="goal-item">
+            <div class="goal-icon"><i class="fas fa-cogs"></i></div>
+              <h3>四个特色</h3>
+              <p>服务航空、航天、民航、国防，推动理论研究与重大需求结合</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card" id="history">
+      <div class="card-header">
+        <h2><i class="fas fa-history"></i> 发展历程</h2>
+      </div>
+      <div class="card-body">
+        <div class="history-track">
+          <div class="history-event">
+            <div class="history-year">2016</div>
+            <div class="history-copy">
+              <h4>实验室成立</h4>
+              <p>电磁频谱认知智能通信实验室正式成立</p>
+            </div>
+          </div>
+          <div class="history-event">
+            <div class="history-year">2022</div>
+            <div class="history-copy">
+              <h4>入选百强创新团队</h4>
+              <p>团队入选南京航空航天大学首批百强创新团队</p>
+            </div>
+          </div>
+          <div class="history-event">
+            <div class="history-year">2026</div>
+            <div class="history-copy">
+              <h4>面向低空与天地一体化持续创新</h4>
+              <p>围绕低空智能通信、电磁频谱管控和空天信息技术持续开展科研与合作</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <div class="card-header">
+        <h2><i class="fas fa-map-marker-alt"></i> 联系我们</h2>
+      </div>
+      <div class="card-body">
+        <div class="contact-grid">
+          <div class="contact-item">
+            <i class="fas fa-map-marker-alt"></i>
+            <h4>地址</h4>
+            <p>南京市江宁区将军大道29号<br>南京航空航天大学</p>
+          </div>
+          <div class="contact-item">
+            <i class="fas fa-envelope"></i>
+            <h4>邮箱</h4>
+            <p>wuqihui@nuaa.edu.cn</p>
+          </div>
+          <div class="contact-item">
+            <i class="fas fa-phone"></i>
+            <h4>电话</h4>
+            <p>请通过学院或教师主页联系</p>
+          </div>
+          <div class="contact-item">
+            <i class="fas fa-globe"></i>
+            <h4>邮编</h4>
+            <p>211106</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

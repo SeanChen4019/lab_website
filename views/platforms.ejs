@@ -1,0 +1,64 @@
+<%- include('partials/header') %>
+
+<section class="page-banner platforms-page-banner">
+  <div class="container">
+    <h1>平台</h1>
+    <p>国家级与省部级支撑平台，为科研攻关与人才培养提供坚实保障</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container">
+    <section class="platform-section" id="national">
+      <div class="people-section-heading">
+        <div><span>NATIONAL-LEVEL</span><h2>国家级平台</h2></div>
+        <p>面向国家重大战略需求的创新平台</p>
+      </div>
+      <% if (nationalPlatforms.length) { %>
+        <div class="platform-card-grid">
+          <% nationalPlatforms.forEach(function(item) { %>
+            <article class="platform-card">
+              <div class="platform-card-photo" style="<%= item.image_url ? 'background-image:url(' + item.image_url + ')' : '' %>">
+                <% if (!item.image_url) { %><i class="fas fa-satellite-dish"></i><% } %>
+                <em>国家级</em>
+              </div>
+              <div class="platform-card-copy">
+                <h3><%= item.name %></h3>
+                <p><%= item.description %></p>
+              </div>
+            </article>
+          <% }); %>
+        </div>
+      <% } else { %>
+        <div class="people-empty"><i class="fas fa-plus-circle"></i><p>暂无国家级平台资料。</p></div>
+      <% } %>
+    </section>
+
+    <section class="platform-section" id="provincial">
+      <div class="people-section-heading">
+        <div><span>PROVINCIAL-MINISTERIAL</span><h2>省部级平台</h2></div>
+        <p>省部共建、产学研协同的科研与合作平台</p>
+      </div>
+      <% if (provincialPlatforms.length) { %>
+        <div class="platform-card-grid">
+          <% provincialPlatforms.forEach(function(item) { %>
+            <article class="platform-card">
+              <div class="platform-card-photo" <%= item.image_url ? 'style="background-image:url(' + item.image_url + ')"' : '' %>>
+                <% if (!item.image_url) { %><i class="fas fa-city"></i><% } %>
+                <em>省部级</em>
+              </div>
+              <div class="platform-card-copy">
+                <h3><%= item.name %></h3>
+                <p><%= item.description %></p>
+              </div>
+            </article>
+          <% }); %>
+        </div>
+      <% } else { %>
+        <div class="people-empty"><i class="fas fa-plus-circle"></i><p>暂无省部级平台资料。</p></div>
+      <% } %>
+    </section>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

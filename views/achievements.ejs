@@ -1,0 +1,113 @@
+<%- include('partials/header') %>
+
+<section class="page-banner achievements-page-banner">
+  <div class="container">
+    <h1>研究成果</h1>
+    <p>项目、专利与论文，展示实验室科研产出</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container">
+    <nav class="achievement-anchor-nav" aria-label="成果类型">
+      <a href="#projects"><i class="fas fa-project-diagram"></i> 项目 <b><%= projects.length %></b></a>
+      <a href="#patents"><i class="fas fa-certificate"></i> 专利 <b><%= patents.length %></b></a>
+      <a href="#papers"><i class="fas fa-book-open"></i> 论文 <b><%= papers.length %></b></a>
+    </nav>
+
+    <section class="content-card achievement-section" id="projects">
+      <div class="card-header">
+        <h2><i class="fas fa-project-diagram"></i> 项目</h2>
+      </div>
+      <div class="card-body">
+        <% if (projects.length) { %>
+          <div class="project-list">
+            <% projects.forEach(function(item) { %>
+              <article class="project-row">
+                <div class="project-row-head">
+                  <h3><%= item.title %></h3>
+                  <span class="project-status <%= item.status === '进行中' ? 'is-ongoing' : 'is-done' %>"><%= item.status || '进行中' %></span>
+                </div>
+                <p class="project-row-desc"><%= item.description %></p>
+                <p class="project-row-meta">
+                  <% if (item.funding_source) { %><span><i class="fas fa-landmark"></i> <%= item.funding_source %></span><% } %>
+                  <% if (item.start_date) { %><span><i class="far fa-calendar-alt"></i> <%= String(item.start_date).slice(0,7) %> ~ <%= item.end_date ? String(item.end_date).slice(0,7) : '至今' %></span><% } %>
+                </p>
+              </article>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <p class="people-empty-inline">暂无项目资料，可在后台“项目”中添加。</p>
+        <% } %>
+      </div>
+    </section>
+
+    <section class="content-card achievement-section" id="patents">
+      <div class="card-header">
+        <h2><i class="fas fa-certificate"></i> 专利</h2>
+      </div>
+      <div class="card-body">
+        <% if (patents.length) { %>
+          <div class="patent-list">
+            <% patents.forEach(function(item) { %>
+              <article class="patent-row">
+                <div class="patent-badge <%= item.status === '已授权' ? 'is-granted' : 'is-pending' %>"><%= item.status || '已授权' %></div>
+                <div class="patent-main">
+                  <h3><%= item.title %></h3>
+                  <p class="patent-meta">
+                    <% if (item.kind) { %><span><%= item.kind %></span><% } %>
+                    <% if (item.patent_no) { %><span>专利号： <%= item.patent_no %></span><% } %>
+                    <% if (item.grant_date) { %><span><%= String(item.grant_date).slice(0,10) %></span><% } %>
+                  </p>
+                  <% if (item.inventors) { %><p class="patent-inventors"><i class="fas fa-users"></i> <%= item.inventors %></p><% } %>
+                </div>
+              </article>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <p class="people-empty-inline">暂无专利资料。</p>
+        <% } %>
+      </div>
+    </section>
+
+    <section class="content-card achievement-section" id="papers">
+      <div class="card-header">
+        <h2><i class="fas fa-book-open"></i> 论文</h2>
+      </div>
+      <div class="card-body">
+        <% if (papers.length) { %>
+          <h3 class="paper-group-title">期刊论文</h3>
+          <ol class="paper-list">
+            <% journalPapers.forEach(function(item) { %>
+              <li class="paper-row">
+                <div class="paper-main">
+                  <h3><%= item.title %></h3>
+                  <p class="paper-meta"><span class="paper-venue"><%= item.venue %></span><% if (item.year) { %><span><%= item.year %></span><% } %><% if (item.authors) { %><span class="paper-authors"><%= item.authors %></span><% } %></p>
+                </div>
+                <% if (item.level) { %><span class="paper-level"><%= item.level %></span><% } %>
+              </li>
+            <% }); %>
+          </ol>
+          <% if (conferencePapers.length) { %>
+            <h3 class="paper-group-title">会议论文</h3>
+            <ol class="paper-list">
+              <% conferencePapers.forEach(function(item) { const idx = papers.indexOf(item) + 1; %>
+                <li class="paper-row">
+                  <div class="paper-main">
+                    <h3><%= item.title %></h3>
+                    <p class="paper-meta"><span class="paper-venue"><%= item.venue %></span><% if (item.year) { %><span><%= item.year %></span><% } %><% if (item.authors) { %><span class="paper-authors"><%= item.authors %></span><% } %></p>
+                  </div>
+                  <% if (item.level) { %><span class="paper-level is-conf"><%= item.level %></span><% } %>
+                </li>
+              <% }); %>
+            </ol>
+          <% } %>
+        <% } else { %>
+          <p class="people-empty-inline">暂无论文资料。</p>
+        <% } %>
+      </div>
+    </section>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,44 @@
+<%- include('partials/header') %>
+
+<section class="page-banner">
+  <div class="container">
+    <h1><i class="fas fa-bullhorn"></i> 通知公告</h1>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container">
+    <div class="content-card" data-cms-type="notice" data-cms-id="<%= notice.id %>">
+      <div class="card-header">
+        <h2><%= notice.title %></h2>
+        <div class="detail-meta">
+          <span><i class="fas fa-calendar"></i> 发布时间：<%= notice.publish_date %></span>
+          <% if (notice.is_top) { %>
+            <span class="notice-tag top"><i class="fas fa-thumbtack"></i> 置顶</span>
+          <% } %>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="article-content">
+          <% if (notice.content) { %>
+            <%- notice.content %>
+          <% } %>
+        </div>
+        <% if (notice.link_url) { %>
+          <div class="notice-link">
+            <a href="<%= notice.link_url %>" target="_blank" rel="noopener noreferrer" class="external-link">
+              <i class="fas fa-external-link-alt"></i> 相关链接
+            </a>
+          </div>
+        <% } %>
+      </div>
+      <div class="card-footer">
+        <a href="/notices" class="back-btn">
+          <i class="fas fa-arrow-left"></i> 返回通知列表
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

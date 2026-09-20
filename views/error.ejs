@@ -1,0 +1,28 @@
+<%- include('partials/header') %>
+
+<section class="error-section">
+  <div class="container">
+    <div class="error-content">
+      <div class="error-icon">
+        <% if (code === 404) { %>
+          <i class="fas fa-search"></i>
+        <% } else { %>
+          <i class="fas fa-exclamation-triangle"></i>
+        <% } %>
+      </div>
+      <h1 class="error-code"><%= code %></h1>
+      <h2 class="error-title"><%= title %></h2>
+      <p class="error-message"><%= message %></p>
+      <div class="error-actions">
+        <a href="/" class="btn btn-primary">
+          <i class="fas fa-home"></i> 返回首页
+        </a>
+        <a href="/search" class="btn btn-secondary">
+          <i class="fas fa-search"></i> 搜索内容
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

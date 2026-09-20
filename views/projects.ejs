@@ -1,0 +1,83 @@
+<%- include('partials/header') %>
+
+<section class="page-banner">
+  <div class="container">
+    <h1><i class="fas fa-project-diagram"></i> 重大项目</h1>
+    <p>承担国家重大科研项目</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container">
+    <div class="content-card">
+      <div class="card-header">
+        <h2><i class="fas fa-list-alt"></i> 项目列表</h2>
+      </div>
+      <div class="card-body">
+        <div class="project-list">
+          <% if (projects && projects.length > 0) { %>
+            <% projects.forEach(function(project) { %>
+              <div class="project-item" id="project-<%= project.id %>" data-cms-type="project" data-cms-id="<%= project.id %>">
+                <div class="project-header">
+                  <h3><%= project.title %></h3>
+                  <span class="project-status <%= project.status === '进行中' ? 'active' : 'completed' %>">
+                    <%= project.status %>
+                  </span>
+                </div>
+                <div class="project-meta">
+                  <span><i class="fas fa-university"></i> <%= project.funding_source %></span>
+                  <span><i class="fas fa-calendar"></i> <%= project.start_date %> 至 <%= project.end_date %></span>
+                </div>
+                <div class="project-desc">
+                  <p><%= project.description %></p>
+                </div>
+              </div>
+            <% }); %>
+          <% } else { %>
+            <p class="empty-text">暂无项目信息</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <div class="card-header">
+        <h2><i class="fas fa-chart-bar"></i> 项目统计</h2>
+      </div>
+      <div class="card-body">
+        <div class="project-stats">
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-flag"></i></div>
+            <div class="stat-info">
+              <div class="stat-number">10+</div>
+              <div class="stat-label">国家级项目</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-landmark"></i></div>
+            <div class="stat-info">
+              <div class="stat-number">15+</div>
+              <div class="stat-label">省部级项目</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-building"></i></div>
+            <div class="stat-info">
+              <div class="stat-number">20+</div>
+              <div class="stat-label">企业合作项目</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+            <div class="stat-info">
+              <div class="stat-number">5000万+</div>
+              <div class="stat-label">累计科研经费</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,112 @@
+<%- include('partials/header') %>
+
+<% const isStudent = member.member_type === 'student';
+   const levelNames = { undergraduate:'本科生', master:'硕士研究生', doctor:'博士研究生' };
+   const memberLabel = isStudent ? (levelNames[member.student_level] || member.title || '学生') : (member.role === 'leader' ? '团队负责人' : '教师');
+   const bioParagraphs = String(member.bio || '').split(/\r?\n/).map(function(line) { return line.trim(); }).filter(Boolean);
+   const resumeLines = String(member.resume || member.bio || '').split(/\r?\n/).map(function(line) { return line.trim(); }).filter(Boolean);
+   const returnAnchor = isStudent ? '/team#students' : '/team#teachers'; %>
+
+<section class="member-profile-hero">
+  <div class="container member-profile-hero-inner">
+    <div class="member-profile-photo">
+      <% if (member.photo_url) { %>
+        <img src="<%= member.photo_url %>" alt="<%= member.name %>">
+      <% } else { %>
+        <span><%= (member.name || '?').slice(0, 1) %></span>
+      <% } %>
+    </div>
+    <div class="member-profile-intro">
+      <nav class="member-profile-breadcrumb" aria-label="面包屑">
+        <a href="/">首页</a><i>／</i><a href="<%= returnAnchor %>">团队成员</a><i>／</i><span><%= member.name %></span>
+      </nav>
+      <div class="member-profile-badges">
+        <span><%= isStudent ? '学生' : '教师' %></span>
+        <span class="muted"><%= memberLabel %></span>
+        <% if (isStudent) { %><span class="<%= member.member_status === 'alumni' ? 'alumni' : 'current' %>"><%= member.member_status === 'alumni' ? '已毕业' : '在读' %></span><% } %>
+      </div>
+      <h1><%= member.name %></h1>
+      <p class="member-profile-title"><%= member.title || memberLabel %></p>
+      <% if (member.research_area) { %><p class="member-profile-focus"><i class="fas fa-flask"></i><%= member.research_area %></p><% } %>
+      <div class="member-profile-actions">
+        <% if (member.email) { %><a href="mailto:<%= member.email %>"><i class="fas fa-envelope"></i>联系邮箱</a><% } %>
+        <a href="<%= returnAnchor %>"><i class="fas fa-users"></i>返回团队</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="member-profile-page" data-cms-type="team" data-cms-id="<%= member.id %>">
+  <div class="container member-profile-layout">
+    <main class="member-profile-main">
+      <section class="profile-section" id="profile-introduction">
+        <div class="profile-section-heading"><span>01</span><h2>个人简介</h2></div>
+        <% if (bioParagraphs.length) { %>
+          <div class="profile-prose"><% bioParagraphs.forEach(function(paragraph) { %><p><%= paragraph %></p><% }); %></div>
+        <% } else { %>
+          <div class="profile-empty-state"><i class="far fa-address-card"></i><div><strong>个人简介正在完善</strong><p>成员的研究经历与个人介绍将在这里持续更新。</p></div></div>
+        <% } %>
+      </section>
+
+      <section class="profile-section" id="profile-resume">
+        <div class="profile-section-heading"><span>02</span><h2>个人履历</h2></div>
+        <% if (resumeLines.length) { %>
+          <ol class="profile-resume">
+            <% resumeLines.forEach(function(line) { %><li><%= line %></li><% }); %>
+          </ol>
+        <% } else { %><div class="profile-empty-state"><i class="fas fa-stream"></i><div><strong>履历信息正在完善</strong><p>教育经历、工作经历与学术任职将在这里展示。</p></div></div><% } %>
+      </section>
+
+      <section class="profile-section" id="profile-updates">
+        <div class="profile-section-heading"><span>03</span><h2>近期动态</h2></div>
+        <% if (updates.length) { %>
+          <div class="profile-updates">
+            <% updates.forEach(function(update) { %>
+              <% if (update.url) { %><a href="<%= update.url %>" class="profile-update-item"><% } else { %><div class="profile-update-item"><% } %>
+                <time><%= update.date || '近期' %></time>
+                <span><strong><%= update.title %></strong><small><%= update.source %></small></span>
+                <% if (update.url) { %><i>→</i><% } %>
+              <% if (update.url) { %></a><% } else { %></div><% } %>
+            <% }); %>
+          </div>
+        <% } else { %><div class="profile-empty-state"><i class="far fa-newspaper"></i><div><strong>暂无近期动态</strong><p>新闻、获奖和学术活动会自动汇集到这里。</p></div></div><% } %>
+      </section>
+
+      <% if (isStudent && (member.destination || member.graduation_year)) { %>
+        <section class="profile-section destination-section" id="profile-destination">
+          <div class="profile-section-heading"><span>04</span><h2>毕业去向</h2></div>
+          <div class="profile-destination">
+            <i class="fas fa-route"></i>
+            <div><small><%= member.graduation_year ? member.graduation_year + '届毕业生' : '毕业去向' %></small><strong><%= member.destination || '待更新' %></strong></div>
+          </div>
+        </section>
+      <% } %>
+    </main>
+
+    <aside class="member-profile-aside">
+      <nav class="profile-local-nav" aria-label="本页导航">
+        <strong>个人主页</strong>
+        <a href="#profile-introduction"><span>01</span>个人简介</a>
+        <a href="#profile-resume"><span>02</span>个人履历</a>
+        <a href="#profile-updates"><span>03</span>近期动态</a>
+        <% if (isStudent && (member.destination || member.graduation_year)) { %><a href="#profile-destination"><span>04</span>毕业去向</a><% } %>
+      </nav>
+      <section>
+        <h2>基本信息</h2>
+        <dl>
+          <div><dt>人才类型</dt><dd><%= isStudent ? '学生' : '教师' %></dd></div>
+          <div><dt>身份</dt><dd><%= memberLabel %></dd></div>
+          <% if (isStudent) { %><div><dt>当前状态</dt><dd><%= member.member_status === 'alumni' ? '已毕业' : '在读' %></dd></div><% } %>
+          <% if (isStudent && member.enrollment_year) { %><div><dt>入学年份</dt><dd><%= member.enrollment_year %></dd></div><% } %>
+          <% if (isStudent && member.graduation_year) { %><div><dt>毕业年份</dt><dd><%= member.graduation_year %></dd></div><% } %>
+          <% if (member.email) { %><div><dt>邮箱</dt><dd><a href="mailto:<%= member.email %>"><%= member.email %></a></dd></div><% } %>
+        </dl>
+      </section>
+      <% if (member.research_area) { %>
+        <section><h2>研究方向</h2><p><%= member.research_area %></p></section>
+      <% } %>
+    </aside>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

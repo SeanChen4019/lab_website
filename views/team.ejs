@@ -1,0 +1,193 @@
+<%- include('partials/header') %>
+
+<section class="page-banner team-page-banner">
+  <div class="container">
+    <h1>团队建设</h1>
+    <p>教师、在读学生与毕业生去向</p>
+  </div>
+</section>
+
+<section class="page-content team-directory-page">
+  <div class="container">
+    <div class="team-directory-intro">
+      <div>
+        <span>OUR PEOPLE</span>
+        <h2>认识实验室的每一位成员</h2>
+        <p>点击成员卡片进入个人主页，查看研究方向、个人履历、近期动态和毕业去向。</p>
+      </div>
+      <div class="team-directory-stats">
+        <span><b><%= teachers.length %></b>教师</span>
+        <span><b><%= currentStudents.length %></b>在读学生</span>
+        <span><b><%= alumniStudents.length %></b>毕业学生</span>
+      </div>
+    </div>
+
+    <nav class="people-type-nav" aria-label="人才类型">
+      <a href="#teachers"><i class="fas fa-chalkboard-teacher"></i><span><b>教师</b><small><%= teachers.length %> 位</small></span></a>
+      <a href="#students"><i class="fas fa-user-graduate"></i><span><b>在读学生</b><small><%= currentStudents.length %> 位</small></span></a>
+      <a href="#alumni"><i class="fas fa-plane-departure"></i><span><b>毕业学生去向</b><small><%= alumniStudents.length %> 位</small></span></a>
+    </nav>
+
+    <div class="people-tools" role="search">
+      <div class="people-search-box">
+        <i class="fas fa-search" aria-hidden="true"></i>
+        <label class="sr-only" for="peopleSearchInput">搜索团队成员</label>
+        <input id="peopleSearchInput" type="search" placeholder="搜索姓名、职称、研究方向或毕业去向" autocomplete="off">
+        <button id="peopleSearchClear" type="button" hidden aria-label="清空成员搜索"><i class="fas fa-times"></i></button>
+      </div>
+      <p id="peopleSearchResult" aria-live="polite">共 <b><%= teachers.length + currentStudents.length + alumniStudents.length %></b> 位成员</p>
+    </div>
+    <div class="people-search-empty" id="peopleSearchEmpty" hidden>
+      <i class="fas fa-search"></i>
+      <strong>没有找到匹配的成员</strong>
+      <p>换一个姓名或研究方向试试。</p>
+    </div>
+
+    <section class="people-section" id="teachers">
+      <div class="people-section-heading">
+        <div><span>FACULTY</span><h2>教师</h2></div>
+        <p>按实验室负责人、教师顺序展示</p>
+      </div>
+      <% if (teachers.length) { %>
+        <div class="people-card-grid teacher-card-grid">
+          <% teachers.forEach(function(member) { %>
+            <a class="people-card <%= member.role === 'leader' ? 'is-leader' : '' %>" href="/team/<%= member.id %>" data-people-search="<%= [member.name, member.title, member.research_area, member.role === 'leader' ? '团队负责人' : '教师'].filter(Boolean).join(' ') %>" data-cms-type="team" data-cms-id="<%= member.id %>">
+              <div class="people-card-photo">
+                <% if (member.photo_url) { %>
+                  <img src="<%= member.photo_url %>" alt="<%= member.name %>" loading="lazy">
+                <% } else { %>
+                  <span><%= (member.name || '?').slice(0, 1) %></span>
+                <% } %>
+                <% if (member.role === 'leader') { %><em>实验室负责人</em><% } %>
+              </div>
+              <div class="people-card-copy">
+                <h3><%= member.name %></h3>
+                <p class="people-card-title"><%= member.title || '教师' %></p>
+                <% if (member.research_area) { %><p class="people-card-research"><%= member.research_area %></p><% } %>
+                <span>查看个人主页 <i aria-hidden="true">→</i></span>
+              </div>
+            </a>
+          <% }); %>
+        </div>
+        <p class="people-section-filter-empty" hidden>教师中暂无匹配成员。</p>
+      <% } else { %>
+        <div class="people-empty"><i class="fas fa-user-plus"></i><p>暂无教师资料，可在后台“团队成员”中添加。</p></div>
+      <% } %>
+    </section>
+
+    <section class="people-section" id="students">
+      <div class="people-section-heading">
+        <div><span>STUDENTS</span><h2>在读学生</h2></div>
+        <p>博士研究生与硕士研究生</p>
+      </div>
+      <% if (currentStudents.length) { %>
+        <div class="people-card-grid student-card-grid">
+          <% currentStudents.forEach(function(member) { const levelName = { undergraduate:'本科生', master:'硕士研究生', doctor:'博士研究生' }[member.student_level] || member.title || '学生'; %>
+            <a class="people-card student-card" href="/team/<%= member.id %>" data-people-search="<%= [member.name, levelName, member.title, member.research_area, '在读'].filter(Boolean).join(' ') %>" data-cms-type="team" data-cms-id="<%= member.id %>">
+              <div class="people-card-photo">
+                <% if (member.photo_url) { %>
+                  <img src="<%= member.photo_url %>" alt="<%= member.name %>" loading="lazy">
+                <% } else { %>
+                  <span><%= (member.name || '?').slice(0, 1) %></span>
+                <% } %>
+                <em class="student-status">在读</em>
+              </div>
+              <div class="people-card-copy">
+                <h3><%= member.name %></h3>
+                <p class="people-card-title"><%= levelName %><%= member.enrollment_year ? ' · ' + member.enrollment_year + '级' : '' %></p>
+                <% if (member.research_area) { %><p class="people-card-research"><%= member.research_area %></p><% } %>
+                <span>查看个人主页 <i aria-hidden="true">→</i></span>
+              </div>
+            </a>
+          <% }); %>
+        </div>
+        <p class="people-section-filter-empty" hidden>在读学生中暂无匹配成员。</p>
+      <% } else { %>
+        <div class="people-empty"><i class="fas fa-user-plus"></i><p>暂无在读学生资料，可在后台“团队成员”中添加学生。</p></div>
+      <% } %>
+    </section>
+
+    <section class="people-section" id="alumni">
+      <div class="people-section-heading">
+        <div><span>ALUMNI</span><h2>毕业学生去向</h2></div>
+        <p>毕业生已奔赴高校、科研院所与行业龙头企业</p>
+      </div>
+      <% if (alumniStudents.length) { %>
+        <div class="alumni-destination-board">
+          <% const destinationType = function(dest) { return String(dest || '').indexOf('大学') > -1 || String(dest).indexOf('高校') > -1 || String(dest).indexOf('讲师') > -1 ? '高校任教' : (String(dest).indexOf('华为') > -1 || String(dest).indexOf('中兴') > -1 || String(dest).indexOf('通讯') > -1 ? '行业企业' : '科研院所与单位'); }; %>
+          <% const destinationGroups = {}; %>
+          <% alumniStudents.forEach(function(member) { const group = destinationType(member.destination); (destinationGroups[group] = destinationGroups[group] || []).push(member); }); %>
+          <% Object.keys(destinationGroups).forEach(function(group) { %>
+            <div class="alumni-destination-group">
+              <h3><i class="fas fa-map-marker-alt"></i> <%= group %> <small><%= destinationGroups[group].length %> 人</small></h3>
+              <div class="alumni-destination-list">
+                <% destinationGroups[group].forEach(function(member) { const levelName = { undergraduate:'本科毕业生', master:'硕士毕业生', doctor:'博士毕业生' }[member.student_level] || member.title || '毕业生'; %>
+                  <a class="alumni-destination-card" href="/team/<%= member.id %>" data-people-search="<%= [member.name, levelName, member.research_area, member.destination, '已毕业'].filter(Boolean).join(' ') %>" data-cms-type="team" data-cms-id="<%= member.id %>">
+                    <div class="alumni-card-photo">
+                      <% if (member.photo_url) { %>
+                        <img src="<%= member.photo_url %>" alt="<%= member.name %>" loading="lazy">
+                      <% } else { %>
+                        <span><%= (member.name || '?').slice(0, 1) %></span>
+                      <% } %>
+                    </div>
+                    <div class="alumni-card-copy">
+                      <h4><%= member.name %></h4>
+                      <p class="alumni-card-level"><%= levelName %><%= member.graduation_year ? ' · ' + member.graduation_year + '届' : '' %></p>
+                      <p class="alumni-card-destination"><i class="fas fa-flag"></i> <%= member.destination || '去向待更新' %></p>
+                    </div>
+                  </a>
+                <% }); %>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+        <p class="people-section-filter-empty" hidden>毕业学生中暂无匹配成员。</p>
+      <% } else { %>
+        <div class="people-empty"><i class="fas fa-user-plus"></i><p>暂无毕业学生资料，可在后台“团队成员”中添加。</p></div>
+      <% } %>
+    </section>
+  </div>
+</section>
+
+<script>
+  const peopleSearchInput = document.getElementById('peopleSearchInput');
+  const peopleSearchClear = document.getElementById('peopleSearchClear');
+  const peopleSearchResult = document.getElementById('peopleSearchResult');
+  const peopleSearchEmpty = document.getElementById('peopleSearchEmpty');
+
+  function normalizePeopleText(value) {
+    return String(value || '').trim().toLocaleLowerCase('zh-CN').replace(/\s+/g, '');
+  }
+
+  function applyPeopleFilters() {
+    const keyword = normalizePeopleText(peopleSearchInput.value);
+    let visibleCount = 0;
+
+    document.querySelectorAll('[data-people-search]').forEach(function(card) {
+      const matches = !keyword || normalizePeopleText(card.dataset.peopleSearch).includes(keyword);
+      card.hidden = !matches;
+      if (!card.hidden) visibleCount += 1;
+    });
+
+    document.querySelectorAll('.people-section').forEach(function(section) {
+      const cards = Array.from(section.querySelectorAll('[data-people-search]'));
+      const empty = section.querySelector('.people-section-filter-empty');
+      if (empty) empty.hidden = cards.some(function(card) { return !card.hidden; });
+    });
+
+    peopleSearchClear.hidden = !peopleSearchInput.value;
+    peopleSearchResult.innerHTML = keyword
+      ? '找到 <b>' + visibleCount + '</b> 位成员'
+      : '共 <b>' + visibleCount + '</b> 位成员';
+    peopleSearchEmpty.hidden = visibleCount !== 0;
+  }
+
+  peopleSearchInput.addEventListener('input', applyPeopleFilters);
+  peopleSearchClear.addEventListener('click', function() {
+    peopleSearchInput.value = '';
+    peopleSearchInput.focus();
+    applyPeopleFilters();
+  });
+</script>
+
+<%- include('partials/footer') %>

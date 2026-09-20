@@ -1,0 +1,74 @@
+.cms-preview-mode {
+  cursor:default;
+}
+
+.cms-preview-mode [data-cms-type] {
+  position:relative !important;
+  cursor:pointer !important;
+  outline:2px solid transparent;
+  outline-offset:4px;
+  transition:outline-color .2s ease,box-shadow .2s ease,transform .2s ease !important;
+}
+
+.cms-preview-mode [data-cms-type]:hover,
+.cms-preview-mode [data-cms-type]:focus {
+  z-index:20;
+  outline-color:#1777ff;
+  box-shadow:0 0 0 7px rgba(23,119,255,.13),0 14px 34px rgba(9,57,118,.16) !important;
+}
+
+.cms-preview-mode [data-cms-type]::after {
+  content:"点击编辑";
+  position:absolute;
+  z-index:40;
+  top:10px;
+  right:10px;
+  display:flex;
+  align-items:center;
+  height:28px;
+  padding:0 11px;
+  border-radius:15px;
+  background:#116fe5;
+  color:#fff;
+  font:500 12px/1 "Microsoft YaHei","PingFang SC",sans-serif;
+  letter-spacing:0;
+  opacity:0;
+  transform:translateY(-5px);
+  transition:.2s ease;
+  pointer-events:none;
+  box-shadow:0 5px 16px rgba(7,61,132,.25);
+}
+
+.cms-preview-mode [data-cms-type]:hover::after,
+.cms-preview-mode [data-cms-type]:focus::after {
+  opacity:1;
+  transform:translateY(0);
+}
+
+.cms-preview-mode [data-cms-type="banner"]::after { content:"编辑轮播图"; }
+.cms-preview-mode [data-cms-type="team"]::after { content:"编辑成员"; }
+.cms-preview-mode [data-cms-type="news"]::after { content:"编辑文章"; }
+.cms-preview-mode [data-cms-type="notice"]::after { content:"编辑通知"; }
+.cms-preview-mode [data-cms-type="research-area"]::after { content:"编辑研究方向"; }
+.cms-preview-mode [data-cms-type="project"]::after { content:"编辑项目"; }
+.cms-preview-mode [data-cms-type="download"]::after { content:"编辑下载"; }
+.cms-preview-mode [data-cms-type="alumni"]::after { content:"编辑毕业生"; }
+.cms-preview-mode [data-cms-type="page-content"]::after { content:"编辑页面文案"; }
+
+.cms-preview-mode a[data-cms-type] {
+  color:inherit;
+}
+
+.cms-preview-mode .site-header a:not([data-cms-type]),
+.cms-preview-mode .inner-tabs a {
+  cursor:pointer;
+}
+
+.cms-preview-mode .reveal-item {
+  opacity:1 !important;
+  transform:none !important;
+}
+
+.cms-preview-mode .back-to-top {
+  display:none !important;
+}

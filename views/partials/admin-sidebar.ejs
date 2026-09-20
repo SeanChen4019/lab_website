@@ -1,0 +1,61 @@
+<%
+// 从 currentPath 自动推导当前激活的页面
+var pathParts = (typeof currentPath !== 'undefined' ? currentPath : '').split('/');
+var adminPage = pathParts[2] || 'dashboard';
+%>
+<aside class="admin-sidebar">
+  <div class="sidebar-header">
+    <h2><i class="fas fa-satellite-dish"></i> 实验室管理</h2>
+    <p>电磁频谱认知智能通信实验室</p>
+  </div>
+  <nav class="sidebar-menu">
+    <a href="/admin/publish" class="menu-item<%= adminPage === 'publish' ? ' active' : '' %>">
+      <i class="fas fa-paper-plane"></i><span>极速发布</span>
+    </a>
+    <a href="/admin/visual" class="menu-item<%= adminPage === 'visual' ? ' active' : '' %>">
+      <i class="fas fa-pen-ruler"></i><span>可视化编辑</span>
+    </a>
+    <a href="/admin/dashboard" class="menu-item<%= adminPage === 'dashboard' ? ' active' : '' %>">
+      <i class="fas fa-tachometer-alt"></i><span>仪表盘</span>
+    </a>
+    <a href="/admin/banners" class="menu-item<%= adminPage === 'banners' ? ' active' : '' %>">
+      <i class="fas fa-images"></i><span>轮播图管理</span>
+    </a>
+    <a href="/admin/notices" class="menu-item<%= adminPage === 'notices' ? ' active' : '' %>">
+      <i class="fas fa-bullhorn"></i><span>通知公告</span>
+    </a>
+    <a href="/admin/news" class="menu-item<%= adminPage === 'news' ? ' active' : '' %>">
+      <i class="fas fa-newspaper"></i><span>新闻动态</span>
+    </a>
+    <a href="/admin/team" class="menu-item<%= adminPage === 'team' ? ' active' : '' %>">
+      <i class="fas fa-users"></i><span>团队成员</span>
+    </a>
+    <a href="/admin/research" class="menu-item<%= adminPage === 'research' ? ' active' : '' %>">
+      <i class="fas fa-flask"></i><span>研究方向</span>
+    </a>
+    <a href="/admin/projects" class="menu-item<%= adminPage === 'projects' ? ' active' : '' %>">
+      <i class="fas fa-project-diagram"></i><span>项目管理</span>
+    </a>
+    <a href="/admin/patents" class="menu-item<%= adminPage === 'patents' ? ' active' : '' %>">
+      <i class="fas fa-certificate"></i><span>专利管理</span>
+    </a>
+    <a href="/admin/papers" class="menu-item<%= adminPage === 'papers' ? ' active' : '' %>">
+      <i class="fas fa-book-open"></i><span>论文管理</span>
+    </a>
+    <a href="/admin/platforms" class="menu-item<%= adminPage === 'platforms' ? ' active' : '' %>">
+      <i class="fas fa-sitemap"></i><span>平台管理</span>
+    </a>
+    <a href="/admin/media" class="menu-item<%= adminPage === 'media' ? ' active' : '' %>">
+      <i class="fas fa-bullhorn"></i><span>媒体报道</span>
+    </a>
+    <a href="/admin/downloads" class="menu-item<%= adminPage === 'downloads' ? ' active' : '' %>">
+      <i class="fas fa-download"></i><span>下载管理</span>
+    </a>
+    <a href="/admin/settings" class="menu-item<%= adminPage === 'settings' ? ' active' : '' %>">
+      <i class="fas fa-cog"></i><span>系统设置</span>
+    </a>
+    <a href="/" class="menu-item" target="_blank">
+      <i class="fas fa-external-link-alt"></i><span>访问前台</span>
+    </a>
+  </nav>
+</aside>

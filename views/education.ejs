@@ -1,0 +1,132 @@
+<%- include('partials/header') %>
+
+<section class="page-banner">
+  <div class="container">
+    <h1><i class="fas fa-graduation-cap"></i> 人才培养</h1>
+    <p>培养创新型频谱技术人才</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container">
+    <div class="content-card" id="training">
+      <div class="card-header">
+        <h2><i class="fas fa-user-graduate"></i> 培养理念</h2>
+      </div>
+      <div class="card-body">
+        <p>实验室秉承"厚基础、强实践、重创新"的人才培养理念，致力于培养具有扎实理论基础、较强实践能力和创新精神的高层次人才。</p>
+
+        <div class="education-features">
+          <div class="feature-item">
+            <div class="feature-icon"><i class="fas fa-book"></i></div>
+            <h3>理论学习</h3>
+            <p>系统学习通信原理、信号处理、频谱分析等专业课程</p>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon"><i class="fas fa-flask"></i></div>
+            <h3>科研实践</h3>
+            <p>参与实际科研项目，在实践中提升研究能力</p>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon"><i class="fas fa-globe"></i></div>
+            <h3>国际视野</h3>
+            <p>鼓励参加国际学术会议，拓展国际学术视野</p>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon"><i class="fas fa-trophy"></i></div>
+            <h3>竞赛锻炼</h3>
+            <p>组织参加各类学科竞赛，提升综合素质</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <div class="card-header">
+        <h2><i class="fas fa-medal"></i> 培养成果</h2>
+      </div>
+      <div class="card-body">
+        <div class="achievement-list">
+          <div class="achievement-row">
+            <div class="achievement-icon"><i class="fas fa-award"></i></div>
+            <div class="achievement-text">
+              <h4>优秀学位论文</h4>
+              <p>多篇博士、硕士学位论文获得省级、校级优秀学位论文</p>
+            </div>
+          </div>
+          <div class="achievement-row">
+            <div class="achievement-icon"><i class="fas fa-star"></i></div>
+            <div class="achievement-text">
+              <h4>国家奖学金</h4>
+              <p>多名研究生获得国家奖学金、校级奖学金</p>
+            </div>
+          </div>
+          <div class="achievement-row">
+            <div class="achievement-icon"><i class="fas fa-trophy"></i></div>
+            <div class="achievement-text">
+              <h4>学科竞赛</h4>
+              <p>在全国研究生数学建模、电子设计竞赛等赛事中屡获佳绩</p>
+            </div>
+          </div>
+          <div class="achievement-row">
+            <div class="achievement-icon"><i class="fas fa-file-alt"></i></div>
+            <div class="achievement-text">
+              <h4>学术论文</h4>
+              <p>研究生在读期间发表大量高水平学术论文</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <div class="card-header">
+        <h2><i class="fas fa-newspaper"></i> 教学动态</h2>
+      </div>
+      <div class="card-body">
+        <div class="news-detail-list">
+          <% if (educationNews && educationNews.length > 0) { %>
+            <% educationNews.forEach(function(news) { %>
+              <div class="detail-item" data-cms-type="news" data-cms-id="<%= news.id %>">
+                <div class="detail-date">
+                  <span class="day"><%= news.publish_date.split('-')[2] %></span>
+                  <span class="month"><%= news.publish_date.split('-')[0] %>-<%= news.publish_date.split('-')[1] %></span>
+                </div>
+                <div class="detail-content">
+                  <h4><a href="/news/<%= news.id %>"><%= news.title %></a></h4>
+                  <p><%= news.summary %></p>
+                </div>
+              </div>
+            <% }); %>
+          <% } else { %>
+            <p class="empty-text">暂无教学动态</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card" id="admissions">
+      <div class="card-header">
+        <h2><i class="fas fa-info-circle"></i> 招生信息</h2>
+      </div>
+      <div class="card-body">
+        <div class="recruit-info">
+          <p>实验室每年招收博士研究生和硕士研究生，欢迎具有通信工程、电子信息、信号处理等相关专业背景的同学报考。</p>
+          <div class="recruit-details">
+            <div class="recruit-item">
+              <h4>博士招生</h4>
+              <p>频谱认知与感知、天地一体化通信、智能信号处理等方向</p>
+            </div>
+            <div class="recruit-item">
+              <h4>硕士招生</h4>
+              <p>通信与信息系统、信号与信息处理等专业</p>
+            </div>
+          </div>
+          <p class="contact-tip">有意者请将个人简历发送至：lab@nuaa.edu.cn</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

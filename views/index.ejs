@@ -1,0 +1,86 @@
+<%- include('partials/header') %>
+
+<section class="hero" id="bannerSlider">
+  <% const heroBanners = (banners && banners.length) ? banners.slice(0, 3) : []; %>
+  <% heroBanners.forEach(function(banner, index) { %>
+    <div class="hero-slide <%= index === 0 ? 'active' : '' %>" data-cms-type="banner" data-cms-id="<%= banner.id %>" style="background-image:url('<%= banner.image_url %>')"></div>
+  <% }); %>
+  <div class="hero-intro container">
+    <span class="hero-eyebrow">NUAA · SPECTRUM & INTELLIGENCE</span>
+    <h1>感知频谱世界<br>探索智能通信</h1>
+    <p>电磁频谱认知智能通信实验室</p>
+    <div class="hero-actions"><a href="/about">了解实验室 <span aria-hidden="true">↗</span></a><a href="/achievements">探索研究成果 <span aria-hidden="true">→</span></a></div>
+  </div>
+  <div class="hero-dots" role="group" aria-label="切换校园图片">
+    <% heroBanners.forEach(function(banner, index) { %><button type="button" class="<%= index === 0 ? 'active' : '' %>" data-index="<%= index %>" aria-label="第 <%= index + 1 %> 张校园图片" aria-pressed="<%= index === 0 %>"></button><% }); %>
+  </div>
+</section>
+
+<section class="home-section lead-news">
+  <div class="container">
+    <div class="home-title">
+      <div><span>NEWS</span><h2>实验室新闻</h2></div>
+      <a href="/notices">更多动态 <b>＋</b></a>
+    </div>
+    <div class="home-news-layout">
+      <% const featured = (news || [])[0]; %>
+      <% if (featured) { %>
+        <a class="home-news-featured" href="/news/<%= featured.id %>" data-cms-type="news" data-cms-id="<%= featured.id %>">
+          <div class="news-card-image <%= !featured.image_url ? 'news-visual-1' : '' %>" style="<%= featured.image_url ? 'background-image:url(' + featured.image_url + ')' : '' %>"></div>
+          <div class="news-card-copy">
+            <time><%= featured.publish_date %></time>
+            <h3><%= featured.title %></h3>
+            <p><%= featured.summary || '关注实验室在频谱认知、智能通信与人才培养领域的最新进展。' %></p>
+            <span>阅读全文 →</span>
+          </div>
+        </a>
+      <% } %>
+      <div class="home-news-ticker-wrap">
+        <div class="home-news-ticker" id="homeNewsTicker">
+          <% if ((news || []).length > 1) { %>
+            <div class="home-news-ticker-track">
+              <% const tickerNews = news.slice(1); %>
+              <% tickerNews.forEach(function(item) { %>
+                <a class="ticker-item" href="/news/<%= item.id %>" data-cms-type="news" data-cms-id="<%= item.id %>">
+                  <div class="ticker-thumb <%= !item.image_url ? 'news-visual-' + ((item.id % 3) + 1) : '' %>" style="<%= item.image_url ? 'background-image:url(' + item.image_url + ')' : '' %>"></div>
+                  <div class="ticker-copy">
+                    <time><%= item.publish_date %></time>
+                    <h3><%= item.title %></h3>
+                  </div>
+                </a>
+              <% }); %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="home-social-section">
+  <div class="container">
+    <div class="home-title">
+      <div><span>MEDIA COVERAGE</span><h2>媒体关注</h2></div>
+    </div>
+  </div>
+  <div class="social-marquee" id="socialMarquee">
+    <div class="social-marquee-track">
+      <% const socialCards = (socialPosts || []).length ? socialPosts : []; %>
+      <% socialCards.forEach(function(item) { %>
+        <a class="social-card" href="<%= item.url || 'javascript:;' %>" <%= item.url ? 'target="_blank" rel="noopener"' : '' %> data-cms-type="social" data-cms-id="<%= item.id %>">
+          <div class="social-card-photo <%= !item.image_url ? 'news-visual-' + ((item.id % 3) + 1) : '' %>" style="<%= item.image_url ? 'background-image:url(' + item.image_url + ')' : '' %>"></div>
+          <div class="social-card-copy">
+            <span class="social-card-platform"><%= item.platform %></span>
+            <h3><%= item.title %></h3>
+            <time><%= item.publish_date %></time>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  </div>
+  <p class="social-follow-tip container">以上为社会各界媒体对实验室的报道，更多报道请联系实验室宣传组。</p>
+</section>
+
+
+
+<%- include('partials/footer') %>

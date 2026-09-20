@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - 电磁频谱认知智能通信实验室</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <%- include('../partials/admin-sidebar') %>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <h1>新闻动态管理</h1>
+        </div>
+        <div class="header-right">
+          <select id="categoryFilter" onchange="loadNews()">
+            <option value="">全部分类</option>
+            <option value="team">团队动态</option>
+            <option value="research">科研动态</option>
+            <option value="teaching">教学动态</option>
+            <option value="exchange">合作交流</option>
+            <option value="education">人才培养</option>
+          </select>
+          <button class="btn btn-primary" onclick="showAddModal()">
+            <i class="fas fa-plus"></i> 添加新闻
+          </button>
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> 退出
+          </button>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>分类</th>
+                <th>标题</th>
+                <th>发布日期</th>
+                <th>置顶</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="newsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 模态框 -->
+  <div class="modal-overlay" id="newsModal">
+    <div class="modal" style="width:min(1120px,96vw);max-height:94vh;">
+      <div class="modal-header">
+        <h3 id="modalTitle">添加新闻</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="newsForm">
+          <input type="hidden" id="newsId">
+          <div class="form-row">
+            <div class="form-group">
+              <label>分类 *</label>
+              <select id="newsCategory" required>
+                <option value="team">团队动态</option>
+                <option value="research">科研动态</option>
+                <option value="teaching">教学动态</option>
+                <option value="exchange">合作交流</option>
+                <option value="education">人才培养</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>发布日期</label>
+              <input type="date" id="newsDate">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>标题 *</label>
+            <input type="text" id="newsTitle" required>
+          </div>
+          <div class="form-group">
+            <label>摘要</label>
+            <textarea id="newsSummary" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label>正文内容</label>
+            <textarea id="newsContent" rows="8"></textarea>
+          </div>
+          <div class="form-group">
+            <label>新闻图片</label>
+            <input type="file" id="newsImageFile" accept="image/*" onchange="uploadToField(this,'newsImage')">
+            <input type="text" id="newsImage" placeholder="上传后自动填写，也可输入图片地址">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>置顶</label>
+              <select id="newsTop">
+                <option value="0">否</option>
+                <option value="1">是</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>状态</label>
+              <select id="newsActive">
+                <option value="1">显示</option>
+                <option value="0">隐藏</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+        <button class="btn btn-warning" onclick="previewNews()"><i class="fas fa-eye"></i> 发布预览</button>
+        <button class="btn btn-primary" onclick="saveNews()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/admin-editor.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+    let newsList = [];
+    const newsEditor = new RichPublisher('newsContent', { token: () => token });
+
+    async function uploadToField(input, fieldId) {
+      if (!input.files[0]) return;
+      const form = new FormData();
+      form.append('file', input.files[0]);
+      const response = await fetch('/api/upload', { method:'POST', headers:{'Authorization':'Bearer '+token}, body:form });
+      const data = await response.json();
+      if (!data.success) return alert(data.message || '上传失败');
+      document.getElementById(fieldId).value = data.url;
+    }
+
+    const categoryNames = {
+      team: '团队动态',
+      research: '科研动态',
+      teaching: '教学动态',
+      exchange: '合作交流',
+      education: '人才培养'
+    };
+
+    async function loadNews() {
+      const category = document.getElementById('categoryFilter').value;
+      try {
+        const url = category ? `/api/news?category=${category}` : '/api/news';
+        const response = await fetch(url, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await response.json();
+        if (data.success) {
+          newsList = data.news;
+          renderNews();
+        }
+      } catch (error) {
+        console.error('加载失败:', error);
+      }
+    }
+
+    function renderNews() {
+      const tbody = document.getElementById('newsTable');
+      tbody.innerHTML = newsList.map(item => `
+        <tr>
+          <td>${item.id}</td>
+          <td><span class="badge badge-success">${categoryNames[item.category] || item.category}</span></td>
+          <td>${item.title}</td>
+          <td>${item.publish_date}</td>
+          <td>${item.is_top ? '<span class="badge badge-warning">置顶</span>' : '-'}</td>
+          <td>${item.is_active ? '<span class="badge badge-success">显示</span>' : '<span class="badge badge-error">隐藏</span>'}</td>
+          <td class="actions">
+            <button class="btn btn-sm btn-primary" onclick="editNews(${item.id})"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="deleteNews(${item.id})"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function showAddModal() {
+      document.getElementById('modalTitle').textContent = '添加新闻';
+      document.getElementById('newsId').value = '';
+      document.getElementById('newsCategory').value = 'team';
+      document.getElementById('newsTitle').value = '';
+      document.getElementById('newsSummary').value = '';
+      newsEditor.setContent('');
+      document.getElementById('newsImage').value = '';
+      document.getElementById('newsDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('newsTop').value = '0';
+      document.getElementById('newsActive').value = '1';
+      document.getElementById('newsModal').classList.add('active');
+    }
+
+    function editNews(id) {
+      const item = newsList.find(n => n.id === id);
+      if (!item) return;
+
+      document.getElementById('modalTitle').textContent = '编辑新闻';
+      document.getElementById('newsId').value = item.id;
+      document.getElementById('newsCategory').value = item.category;
+      document.getElementById('newsTitle').value = item.title;
+      document.getElementById('newsSummary').value = item.summary || '';
+      newsEditor.setContent(item.content || '');
+      document.getElementById('newsImage').value = item.image_url || '';
+      document.getElementById('newsDate').value = item.publish_date;
+      document.getElementById('newsTop').value = item.is_top;
+      document.getElementById('newsActive').value = item.is_active;
+      document.getElementById('newsModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('newsModal').classList.remove('active');
+    }
+
+    async function saveNews() {
+      const id = document.getElementById('newsId').value;
+      const payload = {
+        category: document.getElementById('newsCategory').value,
+        title: document.getElementById('newsTitle').value,
+        summary: document.getElementById('newsSummary').value,
+        content: newsEditor.getContent(),
+        image_url: document.getElementById('newsImage').value,
+        publish_date: document.getElementById('newsDate').value,
+        is_top: parseInt(document.getElementById('newsTop').value),
+        is_active: parseInt(document.getElementById('newsActive').value)
+      };
+
+      try {
+        const url = id ? `/api/news/${id}` : '/api/news';
+        const method = id ? 'PUT' : 'POST';
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (data.success) {
+          closeModal();
+          loadNews();
+          alert(id ? '更新成功' : '添加成功');
+        } else {
+          alert(data.message || '操作失败');
+        }
+      } catch (error) {
+        alert('操作失败');
+      }
+    }
+
+    async function deleteNews(id) {
+      if (!confirm('确定要删除这条新闻吗？')) return;
+      try {
+        const response = await fetch(`/api/news/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await response.json();
+        if (data.success) {
+          loadNews();
+          alert('删除成功');
+        }
+      } catch (error) {
+        alert('删除失败');
+      }
+    }
+
+    function previewNews() {
+      newsEditor.preview(
+        document.getElementById('newsTitle').value,
+        '发布时间：' + (document.getElementById('newsDate').value || '未设置')
+      );
+    }
+
+    async function logout() {
+      try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (e) {}
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/admin/login';
+    }
+
+    loadNews();
+  </script>
+</body>
+</html>

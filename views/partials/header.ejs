@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="keywords" content="<%= typeof siteSettings !== 'undefined' ? siteSettings.site_keywords : '频谱认知,天地一体化,南京航空航天大学' %>">
+  <meta name="description" content="<%= typeof siteSettings !== 'undefined' ? siteSettings.site_description : '电磁频谱认知智能通信实验室' %>">
+  <title><%= title %> - 电磁频谱认知智能通信实验室</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="<%= assetUrl('/css/style.css') %>">
+  <link rel="stylesheet" href="<%= assetUrl('/css/refinement.css') %>">
+  <% if (typeof cmsPreview !== 'undefined' && cmsPreview) { %>
+    <link rel="stylesheet" href="<%= assetUrl('/css/cms-preview.css') %>">
+  <% } %>
+</head>
+<body class="<%= currentPath === '/' ? 'is-home' : 'is-inner' %><%= typeof currentPath === 'string' && /^\/team\/\d+$/.test(currentPath) ? ' is-member-profile' : '' %><%= typeof cmsPreview !== 'undefined' && cmsPreview ? ' cms-preview-mode' : '' %>">
+  <header class="site-header <%= currentPath === '/' ? 'home-header' : '' %>">
+    <div class="utility-bar">
+      <div class="container utility-inner">
+        <span>南京航空航天大学 · 电子信息工程学院</span>
+        <div class="utility-links">
+          <a href="https://www.nuaa.edu.cn/" target="_blank" rel="noopener">学校主页</a>
+          <a href="https://ceie.nuaa.edu.cn/" target="_blank" rel="noopener">学院主页</a>
+          <a href="/admin">网站管理</a>
+        </div>
+      </div>
+    </div>
+    <div class="brand-row container">
+      <a class="brand" href="/" aria-label="返回首页">
+        <span class="brand-mark" aria-hidden="true">
+          <span class="orbit orbit-one"></span><span class="orbit orbit-two"></span><span class="signal-core"></span>
+        </span>
+        <span class="brand-copy">
+          <strong><%= typeof siteSettings !== 'undefined' ? siteSettings.site_name : '电磁频谱认知智能通信实验室' %></strong>
+          <small>ELECTROMAGNETIC SPECTRUM COGNITION & INTELLIGENT COMMUNICATION LAB</small>
+        </span>
+      </a>
+      <form class="header-search site-search-form" action="/search" method="get" role="search">
+        <label class="sr-only" for="headerSearchInput">搜索全站内容</label>
+        <input id="headerSearchInput" name="q" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" maxlength="50" placeholder="搜索全站内容" autocomplete="off">
+        <button type="submit" aria-label="搜索">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
+        </button>
+      </form>
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="打开导航" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <nav class="main-nav" id="mobileNav">
+      <ul class="container">
+        <li class="mobile-nav-search">
+          <form class="site-search-form" action="/search" method="get" role="search">
+            <label class="sr-only" for="mobileSearchInput">搜索全站内容</label>
+            <input id="mobileSearchInput" name="q" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" maxlength="50" placeholder="搜索新闻、成员、项目…" autocomplete="off">
+            <button type="submit" aria-label="搜索">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
+            </button>
+          </form>
+        </li>
+        <% if (typeof navItems !== 'undefined') { %>
+          <% navItems.forEach(function(item) { %>
+            <% const isNavActive = currentPath === item.url || (item.url !== '/' && currentPath.indexOf(item.url + '/') === 0) || (item.children || []).some(function(child) { return child.url === currentPath; }); %>
+            <li class="<%= isNavActive ? 'active' : '' %>">
+              <a href="<%= item.url %>"><%= item.name %></a>
+              <% if (item.children && item.children.length) { %>
+                <div class="nav-dropdown">
+                  <% item.children.forEach(function(sub) { %>
+                    <a href="<%= sub.url %>"><%= sub.name %></a>
+                  <% }); %>
+                </div>
+              <% } %>
+            </li>
+          <% }); %>
+        <% } %>
+      </ul>
+    </nav>
+    <% if (currentPath !== '/') {
+      // 从 navItems 中查找当前页对应的 inner-tabs
+      // 优先精确匹配顶层 URL，其次匹配 children 中的 URL
+      var innerTabs = [];
+      if (typeof navItems !== 'undefined') {
+        // 第一遍：精确匹配顶层 navItem.url
+        for (var i = 0; i < navItems.length; i++) {
+          if ((navItems[i].url === currentPath || (navItems[i].url !== '/' && currentPath.indexOf(navItems[i].url + '/') === 0)) && navItems[i].children && navItems[i].children.length) {
+            innerTabs = navItems[i].children;
+            break;
+          }
+        }
+        // 第二遍：如果没找到，在 children 中搜索
+        if (!innerTabs.length) {
+          for (var j = 0; j < navItems.length; j++) {
+            if (navItems[j].children) {
+              for (var k = 0; k < navItems[j].children.length; k++) {
+                if (navItems[j].children[k].url === currentPath) {
+                  innerTabs = navItems[j].children;
+                  break;
+                }
+              }
+              if (innerTabs.length) break;
+            }
+          }
+        }
+      }
+    %>
+      <% if (innerTabs.length) { %>
+      <div class="inner-tabs container">
+        <% innerTabs.forEach(function(tab) { %>
+          <a href="<%= tab.url %>" class="<%= currentPath === tab.url ? 'active' : '' %>"><%= tab.name %></a>
+        <% }); %>
+      </div>
+      <% } %>
+    <% } %>
+  </header>
+  <main class="main-content" id="mainContent">

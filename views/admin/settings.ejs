@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - 电磁频谱认知智能通信实验室</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <%- include('../partials/admin-sidebar') %>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <h1>系统设置</h1>
+        </div>
+        <div class="header-right">
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> 退出
+          </button>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <div class="form-container">
+          <h2 style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e8e8e8;">
+            <i class="fas fa-cog"></i> 网站基本设置
+          </h2>
+
+          <form id="settingsForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label>网站名称</label>
+                <input type="text" id="site_name">
+              </div>
+              <div class="form-group">
+                <label>网站副标题</label>
+                <input type="text" id="site_subtitle">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>网站关键词</label>
+              <input type="text" id="site_keywords" placeholder="用逗号分隔">
+            </div>
+
+            <div class="form-group">
+              <label>网站描述</label>
+              <textarea id="site_description" rows="3"></textarea>
+            </div>
+
+            <h2 style="margin: 30px 0 20px; padding-bottom: 15px; border-bottom: 1px solid #e8e8e8;">
+              <i class="fas fa-envelope"></i> 联系方式
+            </h2>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>联系邮箱</label>
+                <input type="email" id="contact_email">
+              </div>
+              <div class="form-group">
+                <label>联系电话</label>
+                <input type="text" id="contact_phone">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>联系地址</label>
+              <input type="text" id="contact_address">
+            </div>
+
+            <h2 style="margin: 30px 0 20px; padding-bottom: 15px; border-bottom: 1px solid #e8e8e8;">
+              <i class="fas fa-file-alt"></i> 页脚信息
+            </h2>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>ICP备案号</label>
+                <input type="text" id="icp_number">
+              </div>
+              <div class="form-group">
+                <label>版权信息</label>
+                <input type="text" id="footer_text">
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-primary" onclick="saveSettings()">
+                <i class="fas fa-save"></i> 保存设置
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="loadSettings()">
+                <i class="fas fa-undo"></i> 重置
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="form-container" style="margin-top: 25px;">
+          <h2 style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e8e8e8;">
+            <i class="fas fa-key"></i> 修改密码
+          </h2>
+
+          <form id="passwordForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label>当前密码</label>
+                <input type="password" id="currentPassword">
+              </div>
+              <div class="form-group">
+                <label>新密码</label>
+                <input type="password" id="newPassword">
+              </div>
+              <div class="form-group">
+                <label>确认新密码</label>
+                <input type="password" id="confirmPassword">
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-warning" onclick="changePassword()">
+                <i class="fas fa-key"></i> 修改密码
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+
+    async function loadSettings() {
+      try {
+        const response = await fetch('/api/settings', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await response.json();
+        if (data.success) {
+          const s = data.settings;
+          document.getElementById('site_name').value = s.site_name || '';
+          document.getElementById('site_subtitle').value = s.site_subtitle || '';
+          document.getElementById('site_keywords').value = s.site_keywords || '';
+          document.getElementById('site_description').value = s.site_description || '';
+          document.getElementById('contact_email').value = s.contact_email || '';
+          document.getElementById('contact_phone').value = s.contact_phone || '';
+          document.getElementById('contact_address').value = s.contact_address || '';
+          document.getElementById('icp_number').value = s.icp_number || '';
+          document.getElementById('footer_text').value = s.footer_text || '';
+        }
+      } catch (error) {
+        console.error('加载设置失败:', error);
+      }
+    }
+
+    async function saveSettings() {
+      const payload = {
+        site_name: document.getElementById('site_name').value,
+        site_subtitle: document.getElementById('site_subtitle').value,
+        site_keywords: document.getElementById('site_keywords').value,
+        site_description: document.getElementById('site_description').value,
+        contact_email: document.getElementById('contact_email').value,
+        contact_phone: document.getElementById('contact_phone').value,
+        contact_address: document.getElementById('contact_address').value,
+        icp_number: document.getElementById('icp_number').value,
+        footer_text: document.getElementById('footer_text').value
+      };
+
+      try {
+        const response = await fetch('/api/settings', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (data.success) {
+          alert('设置已保存');
+        } else {
+          alert(data.message || '保存失败');
+        }
+      } catch (error) {
+        alert('保存失败');
+      }
+    }
+
+    async function changePassword() {
+      const current = document.getElementById('currentPassword').value;
+      const newPass = document.getElementById('newPassword').value;
+      const confirm = document.getElementById('confirmPassword').value;
+
+      if (!current || !newPass || !confirm) {
+        alert('请填写所有密码字段');
+        return;
+      }
+
+      if (newPass !== confirm) {
+        alert('两次输入的新密码不一致');
+        return;
+      }
+
+      if (newPass.length < 8) {
+        alert('新密码长度不能少于8位');
+        return;
+      }
+
+      const response = await fetch('/api/auth/password', {
+        method: 'PUT',
+        headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
+        body: JSON.stringify({ currentPassword: current, newPassword: newPass })
+      });
+      const data = await response.json();
+      alert(data.message || (data.success ? '密码修改成功' : '密码修改失败'));
+      if (data.success) document.getElementById('passwordForm').reset();
+    }
+
+    async function logout() {
+      try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (e) {}
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/admin/login';
+    }
+
+    loadSettings();
+  </script>
+</body>
+</html>

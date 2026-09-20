@@ -1,0 +1,37 @@
+# ===== 依赖 / 构建产物 =====
+node_modules/
+dist/
+
+# ===== 运行日志 =====
+*.log
+
+# ===== 本地数据库（含后台账号密码哈希，不入版本库）=====
+database/lab.db
+
+# ===== 开发工具 / 审计副本 / 设计备份 =====
+.agents/
+.audit-review/
+.design-backup/
+
+# ===== 环境变量文件 =====
+.env
+.env.local
+.env.production
+
+# ===== QA 截图与预览图（public/images 下的站点资源不受影响）=====
+/qa-*.png
+/current-*.png
+/inner-*.png
+/ref-*.png
+/*-preview.png
+/*-visual.png
+qa-newnav/
+qa-refinement/
+
+# ===== 打包产物 =====
+*.tar.gz
+*.tgz
+*.zip
+
+# ===== 杂项 =====
+新建文本文档.txt

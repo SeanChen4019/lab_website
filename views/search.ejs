@@ -1,0 +1,56 @@
+<%- include('partials/header') %>
+
+<section class="page-banner search-page-banner">
+  <div class="container">
+    <h1>全站搜索</h1>
+    <p>查找新闻、通知、成员、研究方向、项目和下载资源</p>
+  </div>
+</section>
+
+<section class="page-content search-page">
+  <div class="container">
+    <form class="search-page-form" action="/search" method="get" role="search">
+      <label class="sr-only" for="searchPageInput">输入搜索关键词</label>
+      <input id="searchPageInput" name="q" value="<%= searchQuery || '' %>" maxlength="50" placeholder="请输入关键词，例如：频谱、招生、项目" autocomplete="off" autofocus>
+      <button type="submit">搜索</button>
+    </form>
+
+    <% if (!searchQuery) { %>
+      <div class="search-empty-card">
+        <span aria-hidden="true">⌕</span>
+        <h2>输入关键词开始搜索</h2>
+        <p>可以搜索文章标题和正文，也可以搜索团队成员、研究方向与科研项目。</p>
+      </div>
+    <% } else if (!searchTotal) { %>
+      <div class="search-empty-card">
+        <span aria-hidden="true">○</span>
+        <h2>没有找到“<%= searchQuery %>”</h2>
+        <p>试试更短的关键词，或检查是否有错别字。</p>
+      </div>
+    <% } else { %>
+      <div class="search-summary">共找到 <strong><%= searchTotal %></strong> 条与“<%= searchQuery %>”相关的内容</div>
+      <div class="search-results">
+        <% searchGroups.forEach(function(group) { %>
+          <section class="search-result-group">
+            <div class="search-result-heading">
+              <h2><%= group.label %></h2>
+              <span><%= group.items.length %> 条</span>
+            </div>
+            <div class="search-result-list">
+              <% group.items.forEach(function(item) { %>
+                <a href="<%= item.url %>" class="search-result-item">
+                  <span class="search-result-meta"><%= item.meta %></span>
+                  <h3><%= item.title %></h3>
+                  <% if (item.excerpt) { %><p><%= item.excerpt %></p><% } %>
+                  <b>查看详情 <span aria-hidden="true">→</span></b>
+                </a>
+              <% }); %>
+            </div>
+          </section>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

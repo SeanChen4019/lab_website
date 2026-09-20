@@ -1,0 +1,78 @@
+<%- include('partials/header') %>
+
+<section class="page-banner resources-page-banner">
+  <div class="container">
+    <h1>资源服务</h1>
+    <p>公开数据集与教材，服务科研同行与广大读者</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container">
+    <nav class="achievement-anchor-nav" aria-label="资源类型">
+      <a href="#datasets"><i class="fas fa-database"></i> 公开数据集 <b><%= datasets.length %></b></a>
+      <a href="#textbooks"><i class="fas fa-book"></i> 教材 <b><%= textbooks.length %></b></a>
+    </nav>
+
+    <section class="content-card resource-section" id="datasets">
+      <div class="card-header">
+        <h2><i class="fas fa-database"></i> 公开数据集</h2>
+      </div>
+      <div class="card-body">
+        <% if (datasets.length) { %>
+          <div class="dataset-grid">
+            <% datasets.forEach(function(item) { %>
+              <article class="dataset-card">
+                <div class="dataset-card-head">
+                  <i class="fas fa-wave-square"></i>
+                  <h3><%= item.title %></h3>
+                </div>
+                <p class="dataset-card-desc"><%= item.description %></p>
+                <div class="dataset-card-foot">
+                  <% if (item.file_size) { %><span><i class="fas fa-hdd"></i> <%= item.file_size %></span><% } %>
+                  <% if (item.file_url) { %>
+                    <a class="dataset-btn" href="/download/<%= item.id %>"><i class="fas fa-download"></i> 下载数据集</a>
+                  <% } else { %>
+                    <a class="dataset-btn is-ghost" href="/about#intro"><i class="fas fa-envelope"></i> 联系实验室获取</a>
+                  <% } %>
+                </div>
+              </article>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <p class="people-empty-inline">数据集资源整理中，敬请期待。</p>
+        <% } %>
+      </div>
+    </section>
+
+    <section class="content-card resource-section" id="textbooks">
+      <div class="card-header">
+        <h2><i class="fas fa-book"></i> 教材</h2>
+      </div>
+      <div class="card-body">
+        <% if (textbooks.length) { %>
+          <div class="textbook-shelf">
+            <% const coverThemes = ['theme-blue','theme-purple','theme-green']; %>
+            <% textbooks.forEach(function(item, i) { %>
+              <article class="textbook-card">
+                <div class="textbook-cover <%= coverThemes[i % coverThemes.length] %>">
+                  <span class="textbook-cover-series">实验室系列教材</span>
+                  <strong><%= item.title.replace(/[《》]/g, '') %></strong>
+                  <% if (item.file_size) { %><em><%= item.file_size %></em><% } %>
+                </div>
+                <div class="textbook-copy">
+                  <h3><%= item.title %></h3>
+                  <p><%= item.description %></p>
+                </div>
+              </article>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <p class="people-empty-inline">教材资料整理中，敬请期待。</p>
+        <% } %>
+      </div>
+    </section>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

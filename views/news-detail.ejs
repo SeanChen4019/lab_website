@@ -1,0 +1,44 @@
+<%- include('partials/header') %>
+
+<section class="page-banner">
+  <div class="container">
+    <h1><i class="fas fa-newspaper"></i> <%= news.title %></h1>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container">
+    <div class="content-card" data-cms-type="news" data-cms-id="<%= news.id %>">
+      <div class="card-header">
+        <div class="detail-meta">
+          <span><i class="fas fa-calendar"></i> 发布时间：<%= news.publish_date %></span>
+          <span><i class="fas fa-tag"></i> 分类：
+            <% if (news.category === 'team') { %>团队动态
+            <% } else if (news.category === 'research') { %>科研动态
+            <% } else if (news.category === 'teaching') { %>教学动态
+            <% } else if (news.category === 'exchange') { %>合作交流
+            <% } else if (news.category === 'education') { %>人才培养
+            <% } else { %><%= news.category %><% } %>
+          </span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="article-content">
+          <% if (news.content) { %>
+            <%- news.content %>
+          <% } else { %>
+            <p><%= news.summary %></p>
+          <% } %>
+        </div>
+      </div>
+      <div class="card-footer">
+        <% const categoryBackLinks = { research:'/research', exchange:'/exchange', education:'/education', teaching:'/education', team:'/team' }; %>
+        <a href="<%= categoryBackLinks[news.category] || '/' %>" class="back-btn">
+          <i class="fas fa-arrow-left"></i> 返回栏目
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

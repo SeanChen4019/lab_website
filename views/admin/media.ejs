@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - 电磁频谱认知智能通信实验室</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <%- include('../partials/admin-sidebar') %>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <h1>媒体报道管理</h1>
+        </div>
+        <div class="header-right">
+          <button class="btn btn-primary" onclick="showAddModal()">
+            <i class="fas fa-plus"></i> 添加报道
+          </button>
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> 退出
+          </button>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>媒体</th>
+                <th>标题</th>
+                <th>日期</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="mediaTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="mediaModal">
+    <div class="modal" style="width: 700px;">
+      <div class="modal-header">
+        <h3 id="modalTitle">添加报道</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="mediaForm">
+          <input type="hidden" id="mediaId">
+          <div class="form-row">
+            <div class="form-group">
+              <label>媒体名称 *</label>
+              <input type="text" id="mediaPlatform" placeholder="如 科技日报" required>
+            </div>
+            <div class="form-group">
+              <label>发布日期 *</label>
+              <input type="date" id="mediaDate" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>报道标题 *</label>
+            <input type="text" id="mediaTitle" required>
+          </div>
+          <div class="form-group">
+            <label>报道链接（可留空）</label>
+            <input type="text" id="mediaUrl" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label>配图地址（可留空，如 /uploads/xxx.png）</label>
+            <input type="text" id="mediaImage">
+          </div>
+          <div class="form-group">
+            <label>是否显示</label>
+            <select id="mediaActive">
+              <option value="1">显示</option>
+              <option value="0">隐藏</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveMedia()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    let posts = [];
+
+    async function loadPosts() {
+      try {
+        const response = await fetch('/api/social-posts', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await response.json();
+        if (data.success) {
+          posts = data.posts;
+          renderPosts();
+        }
+      } catch (error) {
+        console.error('加载失败:', error);
+      }
+    }
+
+    function renderPosts() {
+      const tbody = document.getElementById('mediaTable');
+      tbody.innerHTML = posts.map(p => `
+        <tr>
+          <td>${p.id}</td>
+          <td>${p.platform}</td>
+          <td>${p.title}</td>
+          <td>${p.publish_date || '-'}</td>
+          <td><span class="badge ${p.is_active ? 'badge-success' : 'badge-warning'}">${p.is_active ? '显示' : '隐藏'}</span></td>
+          <td class="actions">
+            <button class="btn btn-sm btn-primary" onclick="editPost(${p.id})"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="deletePost(${p.id})"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function showAddModal() {
+      document.getElementById('modalTitle').textContent = '添加报道';
+      document.getElementById('mediaId').value = '';
+      document.getElementById('mediaPlatform').value = '';
+      document.getElementById('mediaTitle').value = '';
+      document.getElementById('mediaUrl').value = '';
+      document.getElementById('mediaImage').value = '';
+      document.getElementById('mediaDate').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('mediaActive').value = '1';
+      document.getElementById('mediaModal').classList.add('active');
+    }
+
+    function editPost(id) {
+      const p = posts.find(item => item.id === id);
+      if (!p) return;
+      document.getElementById('modalTitle').textContent = '编辑报道';
+      document.getElementById('mediaId').value = p.id;
+      document.getElementById('mediaPlatform').value = p.platform || '';
+      document.getElementById('mediaTitle').value = p.title || '';
+      document.getElementById('mediaUrl').value = p.url || '';
+      document.getElementById('mediaImage').value = p.image_url || '';
+      document.getElementById('mediaDate').value = p.publish_date || '';
+      document.getElementById('mediaActive').value = p.is_active;
+      document.getElementById('mediaModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('mediaModal').classList.remove('active');
+    }
+
+    async function saveMedia() {
+      const id = document.getElementById('mediaId').value;
+      const payload = {
+        platform: document.getElementById('mediaPlatform').value,
+        title: document.getElementById('mediaTitle').value,
+        url: document.getElementById('mediaUrl').value,
+        image_url: document.getElementById('mediaImage').value,
+        publish_date: document.getElementById('mediaDate').value,
+        is_active: parseInt(document.getElementById('mediaActive').value)
+      };
+      try {
+        const url = id ? `/api/social-posts/${id}` : '/api/social-posts';
+        const method = id ? 'PUT' : 'POST';
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (data.success) {
+          closeModal();
+          loadPosts();
+          alert(id ? '更新成功' : '添加成功');
+        } else {
+          alert(data.message || '操作失败');
+        }
+      } catch (error) {
+        alert('操作失败');
+      }
+    }
+
+    async function deletePost(id) {
+      if (!confirm('确定要删除吗？')) return;
+      try {
+        const response = await fetch(`/api/social-posts/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await response.json();
+        if (data.success) {
+          loadPosts();
+          alert('删除成功');
+        }
+      } catch (error) {
+        alert('删除失败');
+      }
+    }
+
+    async function logout() {
+      try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (e) {}
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/admin/login';
+    }
+
+    loadPosts();
+  </script>
+</body>
+</html>

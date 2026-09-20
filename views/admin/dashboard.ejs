@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - 电磁频谱认知智能通信实验室</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <%- include('../partials/admin-sidebar') %>
+
+    <!-- 主内容区 -->
+    <main class="admin-main">
+      <!-- 顶部栏 -->
+      <header class="admin-header">
+        <div class="header-left">
+          <h1>仪表盘</h1>
+        </div>
+        <div class="header-right">
+          <div class="user-info">
+            <div class="user-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <span class="user-name"><%= user.username %></span>
+          </div>
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> 退出
+          </button>
+        </div>
+      </header>
+
+      <!-- 内容区域 -->
+      <div class="admin-content">
+        <!-- 统计卡片 -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <i class="fas fa-bullhorn"></i>
+            </div>
+            <div class="stat-info">
+              <h3><%= stats.notices %></h3>
+              <p>通知公告</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <i class="fas fa-newspaper"></i>
+            </div>
+            <div class="stat-info">
+              <h3><%= stats.news %></h3>
+              <p>新闻动态</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange">
+              <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+              <h3><%= stats.members %></h3>
+              <p>团队成员</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">
+              <i class="fas fa-project-diagram"></i>
+            </div>
+            <div class="stat-info">
+              <h3><%= stats.projects %></h3>
+              <p>科研项目</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon red">
+              <i class="fas fa-download"></i>
+            </div>
+            <div class="stat-info">
+              <h3><%= stats.downloads %></h3>
+              <p>数据集与资源</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <i class="fas fa-certificate"></i>
+            </div>
+            <div class="stat-info">
+              <h3><%= stats.patents %></h3>
+              <p>专利</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <i class="fas fa-book-open"></i>
+            </div>
+            <div class="stat-info">
+              <h3><%= stats.papers %></h3>
+              <p>论文</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">
+              <i class="fas fa-sitemap"></i>
+            </div>
+            <div class="stat-info">
+              <h3><%= stats.platforms %></h3>
+              <p>平台</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange">
+              <i class="fas fa-bullhorn"></i>
+            </div>
+            <div class="stat-info">
+              <h3><%= stats.socialPosts %></h3>
+              <p>媒体报道</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 快捷操作 -->
+        <div class="table-container">
+          <div class="table-header">
+            <h2><i class="fas fa-bolt"></i> 快捷操作</h2>
+          </div>
+          <div style="padding: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
+            <a href="/admin/notices" class="btn btn-primary">
+              <i class="fas fa-plus"></i> 发布通知
+            </a>
+            <a href="/admin/news" class="btn btn-success">
+              <i class="fas fa-plus"></i> 发布新闻
+            </a>
+            <a href="/admin/banners" class="btn btn-warning">
+              <i class="fas fa-plus"></i> 添加轮播图
+            </a>
+            <a href="/admin/team" class="btn btn-primary">
+              <i class="fas fa-plus"></i> 添加成员
+            </a>
+            <a href="/" target="_blank" class="btn btn-success">
+              <i class="fas fa-eye"></i> 预览网站
+            </a>
+          </div>
+        </div>
+
+        <!-- 最近动态 -->
+        <div class="table-container" style="margin-top: 20px;">
+          <div class="table-header">
+            <h2><i class="fas fa-clock"></i> 系统信息</h2>
+          </div>
+          <div style="padding: 20px;">
+            <p><i class="fas fa-server"></i> 服务器运行正常</p>
+            <p><i class="fas fa-database"></i> 数据库连接正常</p>
+            <p><i class="fas fa-code-branch"></i> 版本：v1.0.0</p>
+            <p><i class="fas fa-calendar"></i> 当前时间：<span id="currentTime"></span></p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // 更新时间
+    function updateTime() {
+      const now = new Date();
+      document.getElementById('currentTime').textContent = now.toLocaleString('zh-CN');
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+
+    // 退出登录
+    async function logout() {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } catch (e) {}
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/admin/login';
+    }
+  </script>
+</body>
+</html>

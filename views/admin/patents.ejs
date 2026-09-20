@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - 电磁频谱认知智能通信实验室</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <%- include('../partials/admin-sidebar') %>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <h1>专利管理</h1>
+        </div>
+        <div class="header-right">
+          <button class="btn btn-primary" onclick="showAddModal()">
+            <i class="fas fa-plus"></i> 添加专利
+          </button>
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> 退出
+          </button>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>专利名称</th>
+                <th>专利号</th>
+                <th>状态</th>
+                <th>授权日期</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="patentsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="patentModal">
+    <div class="modal" style="width: 700px;">
+      <div class="modal-header">
+        <h3 id="modalTitle">添加专利</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="patentForm">
+          <input type="hidden" id="patentId">
+          <div class="form-group">
+            <label>专利名称 *</label>
+            <input type="text" id="patentTitle" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>专利号</label>
+              <input type="text" id="patentNo" placeholder="ZL2024XXXXXXX.X">
+            </div>
+            <div class="form-group">
+              <label>类型</label>
+              <select id="patentKind">
+                <option value="发明专利">发明专利</option>
+                <option value="实用新型">实用新型</option>
+                <option value="外观设计">外观设计</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>发明人（分号分隔）</label>
+            <input type="text" id="patentInventors">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>状态</label>
+              <select id="patentStatus">
+                <option value="已授权">已授权</option>
+                <option value="实质审查">实质审查</option>
+                <option value="受理中">受理中</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>授权日期 *</label>
+              <input type="date" id="patentDate" required>
+            </div>
+            <div class="form-group">
+              <label>是否显示</label>
+              <select id="patentActive">
+                <option value="1">显示</option>
+                <option value="0">隐藏</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" onclick="savePatent()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    let patents = [];
+
+    async function loadPatents() {
+      try {
+        const response = await fetch('/api/patents', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await response.json();
+        if (data.success) {
+          patents = data.patents;
+          renderPatents();
+        }
+      } catch (error) {
+        console.error('加载失败:', error);
+      }
+    }
+
+    function renderPatents() {
+      const tbody = document.getElementById('patentsTable');
+      tbody.innerHTML = patents.map(p => `
+        <tr>
+          <td>${p.id}</td>
+          <td>${p.title}</td>
+          <td>${p.patent_no || '-'}</td>
+          <td><span class="badge ${p.status === '已授权' ? 'badge-success' : 'badge-warning'}">${p.status}</span></td>
+          <td>${p.grant_date || '-'}</td>
+          <td class="actions">
+            <button class="btn btn-sm btn-primary" onclick="editPatent(${p.id})"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="deletePatent(${p.id})"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function showAddModal() {
+      document.getElementById('modalTitle').textContent = '添加专利';
+      document.getElementById('patentId').value = '';
+      document.getElementById('patentTitle').value = '';
+      document.getElementById('patentNo').value = '';
+      document.getElementById('patentKind').value = '发明专利';
+      document.getElementById('patentInventors').value = '';
+      document.getElementById('patentStatus').value = '已授权';
+      document.getElementById('patentDate').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('patentActive').value = '1';
+      document.getElementById('patentModal').classList.add('active');
+    }
+
+    function editPatent(id) {
+      const p = patents.find(item => item.id === id);
+      if (!p) return;
+      document.getElementById('modalTitle').textContent = '编辑专利';
+      document.getElementById('patentId').value = p.id;
+      document.getElementById('patentTitle').value = p.title;
+      document.getElementById('patentNo').value = p.patent_no || '';
+      document.getElementById('patentKind').value = p.kind || '发明专利';
+      document.getElementById('patentInventors').value = p.inventors || '';
+      document.getElementById('patentStatus').value = p.status || '已授权';
+      document.getElementById('patentDate').value = p.grant_date || '';
+      document.getElementById('patentActive').value = p.is_active;
+      document.getElementById('patentModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('patentModal').classList.remove('active');
+    }
+
+    async function savePatent() {
+      const id = document.getElementById('patentId').value;
+      const payload = {
+        title: document.getElementById('patentTitle').value,
+        patent_no: document.getElementById('patentNo').value,
+        kind: document.getElementById('patentKind').value,
+        inventors: document.getElementById('patentInventors').value,
+        status: document.getElementById('patentStatus').value,
+        grant_date: document.getElementById('patentDate').value,
+        is_active: parseInt(document.getElementById('patentActive').value)
+      };
+      try {
+        const url = id ? `/api/patents/${id}` : '/api/patents';
+        const method = id ? 'PUT' : 'POST';
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (data.success) {
+          closeModal();
+          loadPatents();
+          alert(id ? '更新成功' : '添加成功');
+        } else {
+          alert(data.message || '操作失败');
+        }
+      } catch (error) {
+        alert('操作失败');
+      }
+    }
+
+    async function deletePatent(id) {
+      if (!confirm('确定要删除吗？')) return;
+      try {
+        const response = await fetch(`/api/patents/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await response.json();
+        if (data.success) {
+          loadPatents();
+          alert('删除成功');
+        }
+      } catch (error) {
+        alert('删除失败');
+      }
+    }
+
+    async function logout() {
+      try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (e) {}
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/admin/login';
+    }
+
+    loadPatents();
+  </script>
+</body>
+</html>

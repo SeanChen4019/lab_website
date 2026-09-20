@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理登录 - 电磁频谱认知智能通信实验室</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <div class="login-header">
+        <h1><i class="fas fa-satellite-dish"></i> 电磁频谱认知智能通信实验室</h1>
+        <p>网站管理后台</p>
+      </div>
+      <div class="login-body">
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="username"><i class="fas fa-user"></i> 用户名</label>
+            <input type="text" id="username" name="username" placeholder="请输入用户名" required>
+          </div>
+          <div class="form-group">
+            <label for="password"><i class="fas fa-lock"></i> 密码</label>
+            <input type="password" id="password" name="password" placeholder="请输入密码" required>
+          </div>
+          <button type="submit" class="login-btn">
+            <i class="fas fa-sign-in-alt"></i> 登录
+          </button>
+          <div class="login-error" id="loginError"></div>
+        </form>
+      </div>
+      <div class="login-footer">
+        <p>南京航空航天大学 电子信息工程学院</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 读取重定向参数
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestedRedirect = urlParams.get('redirect') || '/admin/publish';
+    const redirectTo = requestedRedirect.startsWith('/admin') && !requestedRedirect.startsWith('//')
+      ? requestedRedirect
+      : '/admin/publish';
+
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('loginError');
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          window.location.href = redirectTo;
+        } else {
+          errorDiv.textContent = data.message || '登录失败';
+          errorDiv.style.display = 'block';
+        }
+      } catch (error) {
+        errorDiv.textContent = '网络错误，请稍后重试';
+        errorDiv.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

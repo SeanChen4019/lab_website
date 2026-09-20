@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - 电磁频谱认知智能通信实验室</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <%- include('../partials/admin-sidebar') %>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <h1>平台管理</h1>
+        </div>
+        <div class="header-right">
+          <button class="btn btn-primary" onclick="showAddModal()">
+            <i class="fas fa-plus"></i> 添加平台
+          </button>
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> 退出
+          </button>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>级别</th>
+                <th>平台名称</th>
+                <th>排序</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="platformsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="platformModal">
+    <div class="modal" style="width: 700px;">
+      <div class="modal-header">
+        <h3 id="modalTitle">添加平台</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="platformForm">
+          <input type="hidden" id="platformId">
+          <div class="form-group">
+            <label>平台级别 *</label>
+            <select id="platformLevel">
+              <option value="national">国家级平台</option>
+              <option value="provincial">省部级平台</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>平台名称 *</label>
+            <input type="text" id="platformName" required>
+          </div>
+          <div class="form-group">
+            <label>平台介绍</label>
+            <textarea id="platformDesc" rows="4"></textarea>
+          </div>
+          <div class="form-group">
+            <label>配图地址（可留空，如 /uploads/xxx.png）</label>
+            <input type="text" id="platformImage">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>排序（小的在前）</label>
+              <input type="number" id="platformSort" value="0">
+            </div>
+            <div class="form-group">
+              <label>是否显示</label>
+              <select id="platformActive">
+                <option value="1">显示</option>
+                <option value="0">隐藏</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" onclick="savePlatform()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    let platforms = [];
+
+    async function loadPlatforms() {
+      try {
+        const response = await fetch('/api/platforms', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await response.json();
+        if (data.success) {
+          platforms = data.platforms;
+          renderPlatforms();
+        }
+      } catch (error) {
+        console.error('加载失败:', error);
+      }
+    }
+
+    function renderPlatforms() {
+      const tbody = document.getElementById('platformsTable');
+      tbody.innerHTML = platforms.map(p => `
+        <tr>
+          <td>${p.id}</td>
+          <td>${p.level === 'provincial' ? '省部级' : '国家级'}</td>
+          <td>${p.name}</td>
+          <td>${p.sort_order}</td>
+          <td><span class="badge ${p.is_active ? 'badge-success' : 'badge-warning'}">${p.is_active ? '显示' : '隐藏'}</span></td>
+          <td class="actions">
+            <button class="btn btn-sm btn-primary" onclick="editPlatform(${p.id})"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="deletePlatform(${p.id})"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function showAddModal() {
+      document.getElementById('modalTitle').textContent = '添加平台';
+      document.getElementById('platformId').value = '';
+      document.getElementById('platformLevel').value = 'national';
+      document.getElementById('platformName').value = '';
+      document.getElementById('platformDesc').value = '';
+      document.getElementById('platformImage').value = '';
+      document.getElementById('platformSort').value = '0';
+      document.getElementById('platformActive').value = '1';
+      document.getElementById('platformModal').classList.add('active');
+    }
+
+    function editPlatform(id) {
+      const p = platforms.find(item => item.id === id);
+      if (!p) return;
+      document.getElementById('modalTitle').textContent = '编辑平台';
+      document.getElementById('platformId').value = p.id;
+      document.getElementById('platformLevel').value = p.level;
+      document.getElementById('platformName').value = p.name;
+      document.getElementById('platformDesc').value = p.description || '';
+      document.getElementById('platformImage').value = p.image_url || '';
+      document.getElementById('platformSort').value = p.sort_order || 0;
+      document.getElementById('platformActive').value = p.is_active;
+      document.getElementById('platformModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('platformModal').classList.remove('active');
+    }
+
+    async function savePlatform() {
+      const id = document.getElementById('platformId').value;
+      const payload = {
+        level: document.getElementById('platformLevel').value,
+        name: document.getElementById('platformName').value,
+        description: document.getElementById('platformDesc').value,
+        image_url: document.getElementById('platformImage').value,
+        sort_order: parseInt(document.getElementById('platformSort').value) || 0,
+        is_active: parseInt(document.getElementById('platformActive').value)
+      };
+      try {
+        const url = id ? `/api/platforms/${id}` : '/api/platforms';
+        const method = id ? 'PUT' : 'POST';
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (data.success) {
+          closeModal();
+          loadPlatforms();
+          alert(id ? '更新成功' : '添加成功');
+        } else {
+          alert(data.message || '操作失败');
+        }
+      } catch (error) {
+        alert('操作失败');
+      }
+    }
+
+    async function deletePlatform(id) {
+      if (!confirm('确定要删除吗？')) return;
+      try {
+        const response = await fetch(`/api/platforms/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await response.json();
+        if (data.success) {
+          loadPlatforms();
+          alert('删除成功');
+        }
+      } catch (error) {
+        alert('删除失败');
+      }
+    }
+
+    async function logout() {
+      try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (e) {}
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/admin/login';
+    }
+
+    loadPlatforms();
+  </script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - 电磁频谱认知智能通信实验室</title>
+  <link rel="stylesheet" href="/css/admin-visual.css">
+</head>
+<body class="visual-cms" data-initial-page="<%= initialPage %>">
+  <aside class="visual-rail">
+    <a class="visual-brand" href="/admin/visual">
+      <span class="visual-brand-mark"><i></i></span>
+      <span><strong>网站内容管理</strong><small>可视化编辑工作台</small></span>
+    </a>
+
+    <div class="visual-rail-label">前台页面</div>
+    <nav class="visual-page-nav" id="visualPageNav">
+      <button data-page="/" data-create="news"><span>⌂</span>首页</button>
+      <button data-page="/about"><span>◎</span>实验室概况</button>
+      <button data-page="/team" data-create="team"><span>♟</span>团队建设</button>
+      <button data-page="/research" data-create="research-area"><span>⌁</span>科学研究</button>
+      <button data-page="/projects" data-create="project"><span>▦</span>重大项目</button>
+      <button data-page="/education" data-create="news" data-category="education"><span>◇</span>人才培养</button>
+      <button data-page="/exchange" data-create="news" data-category="exchange"><span>∞</span>合作交流</button>
+      <button data-page="/downloads" data-create="download"><span>⇩</span>相关下载</button>
+    </nav>
+
+    <div class="visual-rail-label visual-advanced-label">高级管理</div>
+    <nav class="visual-advanced-nav">
+      <a href="/admin/publish">极速发布</a>
+      <a href="/admin/news">文章与通知</a>
+      <a href="/admin/banners">首页轮播图</a>
+      <a href="/admin/settings">网站设置</a>
+      <a href="/admin/dashboard">数据仪表盘</a>
+    </nav>
+
+    <div class="visual-rail-footer">
+      <a href="/" target="_blank">打开正式网站 ↗</a>
+      <button id="visualLogout">退出登录</button>
+    </div>
+  </aside>
+
+  <main class="visual-workspace">
+    <header class="visual-toolbar">
+      <div class="visual-toolbar-copy">
+        <strong id="visualPageTitle">团队建设</strong>
+        <span><i class="status-dot"></i>点击页面中带边框的内容即可编辑</span>
+      </div>
+      <div class="visual-toolbar-actions">
+        <div class="visual-device-switch" aria-label="预览尺寸">
+          <button class="active" data-device="desktop" title="桌面端">桌面</button>
+          <button data-device="tablet" title="平板端">平板</button>
+          <button data-device="mobile" title="手机端">手机</button>
+        </div>
+        <button class="toolbar-button" id="visualRefresh">刷新预览</button>
+        <button class="toolbar-button" id="visualContentList">内容列表</button>
+        <button class="toolbar-button primary" id="visualAdd">＋ 添加内容</button>
+      </div>
+    </header>
+
+    <section class="visual-stage" id="visualStage">
+      <div class="visual-browser">
+        <div class="visual-browser-bar">
+          <span class="browser-dots"><i></i><i></i><i></i></span>
+          <span class="browser-address" id="visualAddress">http://127.0.0.1:3000/team</span>
+          <span class="browser-live">实时预览</span>
+        </div>
+        <iframe
+          id="visualPreview"
+          title="网站可视化编辑预览"
+          src="<%= initialPage %>?cms=1"
+        ></iframe>
+      </div>
+      <div class="visual-loading" id="visualLoading"><span></span>正在载入页面</div>
+    </section>
+  </main>
+
+  <aside class="visual-editor" id="visualEditor" aria-hidden="true">
+    <div class="visual-editor-header">
+      <div>
+        <small id="visualEditorEyebrow">内容编辑</small>
+        <h2 id="visualEditorTitle">编辑内容</h2>
+      </div>
+      <button id="visualEditorClose" aria-label="关闭">×</button>
+    </div>
+    <div class="visual-editor-body" id="visualEditorBody">
+      <div class="visual-empty-state">
+        <span>✦</span>
+        <h3>直接点击页面内容</h3>
+        <p>成员卡片、新闻、研究方向和项目等内容会显示蓝色编辑边框。点击后即可在这里修改。</p>
+      </div>
+    </div>
+    <div class="visual-editor-footer" id="visualEditorFooter" hidden>
+      <button class="editor-delete" id="visualDelete">删除</button>
+      <div>
+        <button class="editor-cancel" id="visualCancel">取消</button>
+        <button class="editor-save" id="visualSave">保存并刷新</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="visual-toast" id="visualToast" role="status"></div>
+  <script src="/js/admin-visual.js"></script>
+</body>
+</html>

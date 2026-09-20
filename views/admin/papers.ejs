@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - 电磁频谱认知智能通信实验室</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <%- include('../partials/admin-sidebar') %>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <h1>论文管理</h1>
+        </div>
+        <div class="header-right">
+          <button class="btn btn-primary" onclick="showAddModal()">
+            <i class="fas fa-plus"></i> 添加论文
+          </button>
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> 退出
+          </button>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>论文标题</th>
+                <th>期刊/会议</th>
+                <th>年份</th>
+                <th>类型</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="papersTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="paperModal">
+    <div class="modal" style="width: 720px;">
+      <div class="modal-header">
+        <h3 id="modalTitle">添加论文</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="paperForm">
+          <input type="hidden" id="paperId">
+          <div class="form-group">
+            <label>论文标题 *</label>
+            <input type="text" id="paperTitle" required>
+          </div>
+          <div class="form-group">
+            <label>作者（如 Qihui Wu, Fuhui Zhou, et al.）</label>
+            <input type="text" id="paperAuthors">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>期刊/会议名称 *</label>
+              <input type="text" id="paperVenue" required>
+            </div>
+            <div class="form-group">
+              <label>发表年份 *</label>
+              <input type="number" id="paperYear" min="1900" max="2100" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>类型</label>
+              <select id="paperType">
+                <option value="journal">期刊论文</option>
+                <option value="conference">会议论文</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>级别标注</label>
+              <input type="text" id="paperLevel" placeholder="如 SCI一区 / CCF-A">
+            </div>
+            <div class="form-group">
+              <label>是否显示</label>
+              <select id="paperActive">
+                <option value="1">显示</option>
+                <option value="0">隐藏</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>论文链接（可留空）</label>
+            <input type="text" id="paperLink" placeholder="https://...">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" onclick="savePaper()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    let papers = [];
+
+    async function loadPapers() {
+      try {
+        const response = await fetch('/api/papers', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await response.json();
+        if (data.success) {
+          papers = data.papers;
+          renderPapers();
+        }
+      } catch (error) {
+        console.error('加载失败:', error);
+      }
+    }
+
+    function renderPapers() {
+      const tbody = document.getElementById('papersTable');
+      tbody.innerHTML = papers.map(p => `
+        <tr>
+          <td>${p.id}</td>
+          <td>${p.title}</td>
+          <td>${p.venue || '-'}</td>
+          <td>${p.year || '-'}</td>
+          <td>${p.pub_type === 'conference' ? '会议' : '期刊'}</td>
+          <td class="actions">
+            <button class="btn btn-sm btn-primary" onclick="editPaper(${p.id})"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="deletePaper(${p.id})"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function showAddModal() {
+      document.getElementById('modalTitle').textContent = '添加论文';
+      document.getElementById('paperId').value = '';
+      document.getElementById('paperTitle').value = '';
+      document.getElementById('paperAuthors').value = '';
+      document.getElementById('paperVenue').value = '';
+      document.getElementById('paperYear').value = new Date().getFullYear();
+      document.getElementById('paperType').value = 'journal';
+      document.getElementById('paperLevel').value = '';
+      document.getElementById('paperLink').value = '';
+      document.getElementById('paperActive').value = '1';
+      document.getElementById('paperModal').classList.add('active');
+    }
+
+    function editPaper(id) {
+      const p = papers.find(item => item.id === id);
+      if (!p) return;
+      document.getElementById('modalTitle').textContent = '编辑论文';
+      document.getElementById('paperId').value = p.id;
+      document.getElementById('paperTitle').value = p.title;
+      document.getElementById('paperAuthors').value = p.authors || '';
+      document.getElementById('paperVenue').value = p.venue || '';
+      document.getElementById('paperYear').value = p.year || new Date().getFullYear();
+      document.getElementById('paperType').value = p.pub_type || 'journal';
+      document.getElementById('paperLevel').value = p.level || '';
+      document.getElementById('paperLink').value = p.link || '';
+      document.getElementById('paperActive').value = p.is_active;
+      document.getElementById('paperModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('paperModal').classList.remove('active');
+    }
+
+    async function savePaper() {
+      const id = document.getElementById('paperId').value;
+      const payload = {
+        title: document.getElementById('paperTitle').value,
+        authors: document.getElementById('paperAuthors').value,
+        venue: document.getElementById('paperVenue').value,
+        year: parseInt(document.getElementById('paperYear').value),
+        pub_type: document.getElementById('paperType').value,
+        level: document.getElementById('paperLevel').value,
+        link: document.getElementById('paperLink').value,
+        is_active: parseInt(document.getElementById('paperActive').value)
+      };
+      try {
+        const url = id ? `/api/papers/${id}` : '/api/papers';
+        const method = id ? 'PUT' : 'POST';
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (data.success) {
+          closeModal();
+          loadPapers();
+          alert(id ? '更新成功' : '添加成功');
+        } else {
+          alert(data.message || '操作失败');
+        }
+      } catch (error) {
+        alert('操作失败');
+      }
+    }
+
+    async function deletePaper(id) {
+      if (!confirm('确定要删除吗？')) return;
+      try {
+        const response = await fetch(`/api/papers/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await response.json();
+        if (data.success) {
+          loadPapers();
+          alert('删除成功');
+        }
+      } catch (error) {
+        alert('删除失败');
+      }
+    }
+
+    async function logout() {
+      try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (e) {}
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/admin/login';
+    }
+
+    loadPapers();
+  </script>
+</body>
+</html>

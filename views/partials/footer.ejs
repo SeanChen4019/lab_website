@@ -1,0 +1,34 @@
+  </main>
+  <section class="friend-links">
+    <div class="container">
+      <h2>友情链接</h2>
+      <div class="friend-link-list">
+        <a href="https://www.nuaa.edu.cn/" target="_blank" rel="noopener">南京航空航天大学</a>
+        <a href="https://ceie.nuaa.edu.cn/" target="_blank" rel="noopener">电子信息工程学院</a>
+        <a href="https://cog.nuaa.edu.cn/" target="_blank" rel="noopener">实验室原网站</a>
+        <a href="https://www.nsfc.gov.cn/" target="_blank" rel="noopener">国家自然科学基金委员会</a>
+      </div>
+    </div>
+  </section>
+  <footer class="main-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <strong><%= typeof siteSettings !== 'undefined' ? siteSettings.site_name : '电磁频谱认知智能通信实验室' %></strong>
+        <span>南京航空航天大学电子信息工程学院</span>
+      </div>
+      <div class="footer-address">
+        <p>明故宫校区：江苏省南京市秦淮区御道街29号　邮编 210016</p>
+        <p>将军路校区：江苏省南京市江宁区将军大道29号　邮编 211106</p>
+      </div>
+      <div class="footer-meta">
+        <p>版权所有 © 南京航空航天大学</p>
+        <p><%= typeof siteSettings !== 'undefined' ? siteSettings.icp_number : '苏ICP备05070685号' %></p>
+      </div>
+    </div>
+  </footer>
+  <script src="<%= assetUrl('/js/main.js') %>"></script>
+  <% if (typeof cmsPreview !== 'undefined' && cmsPreview) { %>
+    <script src="<%= assetUrl('/js/cms-preview.js') %>"></script>
+  <% } %>
+</body>
+</html>

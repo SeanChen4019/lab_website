@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - 电磁频谱认知智能通信实验室</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/admin-publish.css">
+</head>
+<body class="easy-publish-page">
+  <div class="admin-layout">
+    <%- include('../partials/admin-sidebar') %>
+
+    <main class="admin-main publish-main">
+      <header class="admin-header publish-header">
+        <div class="header-left">
+          <span class="publish-eyebrow">最简单的发布方式</span>
+          <h1>极速发布</h1>
+          <p>选类型、填标题、写正文，然后点击发布。其他设置都可以不管。</p>
+        </div>
+        <div class="header-right">
+          <a class="btn btn-secondary" href="/" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> 查看网站</a>
+          <button class="logout-btn" id="publishLogout"><i class="fas fa-sign-out-alt"></i> 退出</button>
+        </div>
+      </header>
+
+      <div class="admin-content publish-content">
+        <div class="publish-guide" aria-label="发布步骤">
+          <span><b>1</b> 选择类型</span>
+          <i></i>
+          <span><b>2</b> 填写内容</span>
+          <i></i>
+          <span><b>3</b> 一键发布</span>
+        </div>
+
+        <form id="easyPublishForm" class="publish-card" novalidate>
+          <section class="publish-section">
+            <div class="publish-section-title">
+              <span>第 1 步</span>
+              <div><h2>要发布什么？</h2><p>不确定时选“新闻动态”即可。</p></div>
+            </div>
+            <div class="publish-type-grid">
+              <label class="publish-type-option active">
+                <input type="radio" name="publishType" value="news" checked>
+                <i class="fas fa-newspaper"></i>
+                <span><strong>新闻动态</strong><small>成果、会议、活动、团队消息</small></span>
+                <b>✓</b>
+              </label>
+              <label class="publish-type-option">
+                <input type="radio" name="publishType" value="notice">
+                <i class="fas fa-bullhorn"></i>
+                <span><strong>通知公告</strong><small>时间安排、报名、重要提醒</small></span>
+                <b>✓</b>
+              </label>
+            </div>
+          </section>
+
+          <section class="publish-section">
+            <div class="publish-section-title">
+              <span>第 2 步</span>
+              <div><h2>填写内容</h2><p>带“必填”的只有标题和正文。</p></div>
+            </div>
+            <div class="publish-fields">
+              <div class="form-group publish-title-field">
+                <label for="publishTitle">标题 <em>必填</em></label>
+                <input id="publishTitle" type="text" maxlength="200" placeholder="用一句话说清楚这条内容" autocomplete="off" required>
+                <small><span id="publishTitleCount">0</span>/200 字</small>
+              </div>
+              <div class="form-group">
+                <label for="publishContent">正文 <em>必填</em></label>
+                <textarea id="publishContent" rows="12" placeholder="在这里输入正文，也可以直接粘贴文字和图片"></textarea>
+              </div>
+            </div>
+          </section>
+
+          <details class="publish-advanced" id="publishAdvanced">
+            <summary><i class="fas fa-sliders-h"></i> 可选设置 <span>分类、封面、摘要、日期和置顶</span></summary>
+            <div class="publish-advanced-grid">
+              <div class="form-group news-only">
+                <label for="publishCategory">显示在哪个栏目</label>
+                <select id="publishCategory">
+                  <option value="research">科研动态</option>
+                  <option value="team">团队动态</option>
+                  <option value="teaching">教学动态</option>
+                  <option value="exchange">合作交流</option>
+                  <option value="education">人才培养</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="publishDate">发布日期</label>
+                <input id="publishDate" type="date">
+              </div>
+              <div class="form-group full news-only">
+                <label for="publishSummary">摘要 <span>不填会自动从正文提取</span></label>
+                <textarea id="publishSummary" rows="3" maxlength="500" placeholder="可留空"></textarea>
+              </div>
+              <div class="form-group full news-only">
+                <label>封面图片 <span>可留空</span></label>
+                <div class="publish-upload-row">
+                  <label class="publish-upload-button"><i class="fas fa-upload"></i> 选择并上传图片<input id="publishCoverFile" type="file" accept="image/jpeg,image/png,image/gif" hidden></label>
+                  <input id="publishCover" type="text" placeholder="上传后自动填写图片地址">
+                  <span class="publish-upload-status" id="publishUploadStatus"></span>
+                </div>
+                <img id="publishCoverPreview" class="publish-cover-preview" alt="封面预览" hidden>
+              </div>
+              <div class="form-group full notice-only" hidden>
+                <label for="publishLink">相关链接 <span>可留空</span></label>
+                <input id="publishLink" type="url" placeholder="https://… 或站内 / 开头的地址">
+              </div>
+              <label class="publish-checkbox full">
+                <input id="publishTop" type="checkbox">
+                <span><strong>置顶显示</strong><small>只有特别重要的内容才需要勾选</small></span>
+              </label>
+            </div>
+          </details>
+
+          <div class="publish-actions">
+            <div class="publish-draft-state" id="publishDraftState"><i class="fas fa-shield-alt"></i> 内容会自动暂存，不怕误关页面</div>
+            <button type="button" class="publish-preview-btn" id="publishPreview"><i class="fas fa-eye"></i> 先预览</button>
+            <button type="submit" class="publish-submit" id="publishSubmit"><i class="fas fa-paper-plane"></i> 立即发布到网站</button>
+          </div>
+          <div class="publish-error" id="publishError" role="alert" hidden></div>
+        </form>
+
+        <section class="publish-success" id="publishSuccess" hidden>
+          <span class="publish-success-icon">✓</span>
+          <div>
+            <small>发布成功</small>
+            <h2 id="publishSuccessTitle"></h2>
+            <p>内容已经出现在前台，点击下面的按钮可以立即核对。</p>
+          </div>
+          <div class="publish-success-actions">
+            <a class="btn btn-success" id="publishViewLink" href="#" target="_blank" rel="noopener"><i class="fas fa-eye"></i> 查看前台页面</a>
+            <button class="btn btn-primary" id="publishAnother"><i class="fas fa-plus"></i> 再发布一条</button>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/admin-editor.js"></script>
+  <script src="/js/admin-publish.js"></script>
+</body>
+</html>

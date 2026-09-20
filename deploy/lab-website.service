@@ -1,0 +1,26 @@
+[Unit]
+Description=NUAA Spectrum Cognition Lab Website
+After=network.target
+
+[Service]
+Type=simple
+User=labwebsite
+Group=labwebsite
+WorkingDirectory=/opt/lab-website/current
+EnvironmentFile=/etc/lab-website/lab-website.env
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5
+TimeoutStopSec=20
+KillSignal=SIGTERM
+UMask=0027
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/lab-website/current/database
+ReadWritePaths=/opt/lab-website/current/public/uploads
+
+[Install]
+WantedBy=multi-user.target

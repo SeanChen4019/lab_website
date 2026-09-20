@@ -1,0 +1,40 @@
+<%- include('partials/header') %>
+
+<section class="page-banner">
+  <div class="container">
+    <h1>通知公告</h1>
+    <p>实验室通知、活动安排与相关信息</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container">
+    <div class="content-card">
+      <div class="card-header"><h2>全部通知</h2></div>
+      <div class="card-body">
+        <div class="notice-page-list">
+          <% if (notices && notices.length) { %>
+            <% notices.forEach(function(item) { %>
+              <a href="/notice/<%= item.id %>" class="notice-page-item" data-cms-type="notice" data-cms-id="<%= item.id %>">
+                <time datetime="<%= item.publish_date %>">
+                  <b><%= (item.publish_date || '').slice(8, 10) %></b>
+                  <span><%= (item.publish_date || '').slice(0, 7) %></span>
+                </time>
+                <span class="notice-page-copy">
+                  <strong><%= item.title %></strong>
+                  <small><%= String(item.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120) %></small>
+                </span>
+                <% if (item.is_top) { %><em>置顶</em><% } %>
+                <i aria-hidden="true">→</i>
+              </a>
+            <% }); %>
+          <% } else { %>
+            <p class="empty-text">暂无通知公告</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

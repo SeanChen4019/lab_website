@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - 电磁频谱认知智能通信实验室</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <%- include('../partials/admin-sidebar') %>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <h1>团队成员管理</h1>
+        </div>
+        <div class="header-right">
+          <button class="btn btn-primary" onclick="showAddModal()">
+            <i class="fas fa-plus"></i> 添加成员
+          </button>
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> 退出
+          </button>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>姓名</th>
+                <th>职称</th>
+                <th>人才类型</th>
+                <th>身份 / 状态</th>
+                <th>研究方向</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="teamTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 模态框 -->
+  <div class="modal-overlay" id="teamModal">
+    <div class="modal" style="width:min(940px,96vw);max-height:94vh;">
+      <div class="modal-header">
+        <h3 id="modalTitle">添加成员</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="teamForm">
+          <input type="hidden" id="memberId">
+          <div class="member-editor-guide">
+            <i class="fas fa-magic"></i>
+            <div><strong>填写后自动生成个人主页</strong><p>只需完成姓名和人才类型即可发布；简介、履历、动态等内容可随时回来补充。</p></div>
+          </div>
+
+          <section class="member-form-section">
+            <div class="member-form-section-heading"><span>1</span><div><strong>基本身份</strong><small>先说明这是谁，属于教师还是学生</small></div></div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>姓名 *</label>
+                <input type="text" id="memberName" required placeholder="请输入成员姓名">
+              </div>
+              <div class="form-group">
+                <label>职称 / 身份称谓</label>
+                <input type="text" id="memberTitle" placeholder="如：教授、博士生导师、硕士研究生">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>人才类型 *</label>
+                <select id="memberType" required onchange="updateMemberTypeFields()">
+                  <option value="teacher">教师</option>
+                  <option value="student">学生</option>
+                </select>
+              </div>
+              <div class="form-group teacher-field">
+                <label>团队角色 *</label>
+                <select id="memberRole" required>
+                  <option value="leader">负责人</option>
+                  <option value="member">教师</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>邮箱</label>
+                <input type="email" id="memberEmail" placeholder="用于个人主页联系按钮">
+              </div>
+            </div>
+            <div class="form-row student-field" hidden>
+              <div class="form-group">
+                <label>培养层次</label>
+                <select id="memberStudentLevel">
+                  <option value="">请选择</option>
+                  <option value="undergraduate">本科生</option>
+                  <option value="master">硕士研究生</option>
+                  <option value="doctor">博士研究生</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>当前状态</label>
+                <select id="memberStatus">
+                  <option value="current">在读</option>
+                  <option value="alumni">已毕业</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>入学年份</label>
+                <input type="number" id="memberEnrollmentYear" min="1900" max="2100" placeholder="如：2024">
+              </div>
+              <div class="form-group">
+                <label>毕业年份</label>
+                <input type="number" id="memberGraduationYear" min="1900" max="2100" placeholder="未毕业可留空">
+              </div>
+            </div>
+            <div class="form-group student-field" hidden>
+              <label>毕业去向</label>
+              <input type="text" id="memberDestination" placeholder="如：华为 · 算法工程师；在读学生可留空">
+              <small class="form-field-hint">学生改为“已毕业”后，可在这里填写单位和岗位，前台会自动显示毕业去向。</small>
+            </div>
+          </section>
+
+          <section class="member-form-section">
+            <div class="member-form-section-heading"><span>2</span><div><strong>个人主页内容</strong><small>这些内容会直接显示在成员个人主页</small></div></div>
+            <div class="form-group">
+              <label>研究方向</label>
+              <input type="text" id="memberResearch" placeholder="如：频谱感知、智能通信、天地一体化网络">
+            </div>
+            <div class="form-group">
+              <label>个人简介</label>
+              <textarea id="memberBio" rows="4" placeholder="用一两段话介绍成员；换行后前台会自动分段"></textarea>
+            </div>
+            <div class="form-group">
+              <label>个人履历</label>
+              <textarea id="memberResume" rows="6" placeholder="每行写一条经历，例如：2021年，获南京航空航天大学博士学位"></textarea>
+              <small class="form-field-hint">一行一条，前台会自动排成时间线，无需学习排版。</small>
+            </div>
+            <div class="form-group">
+              <label>近期动态</label>
+              <textarea id="memberUpdates" rows="5" placeholder="每行一条：日期｜动态标题｜链接（链接可省略）&#10;例如：2026-08-01｜获批国家自然科学基金｜/news/12"></textarea>
+              <small class="form-field-hint">网站新闻中出现成员姓名时也会自动汇入，这里只需补充额外动态。</small>
+            </div>
+          </section>
+
+          <section class="member-form-section">
+            <div class="member-form-section-heading"><span>3</span><div><strong>照片与展示</strong><small>最后确认头像、排序和是否公开显示</small></div></div>
+            <div class="member-photo-editor">
+              <div class="member-photo-preview" id="memberPhotoPreview"><i class="fas fa-user"></i></div>
+              <div class="form-group">
+                <label>成员照片</label>
+                <input type="file" id="memberPhotoFile" accept="image/*" onchange="uploadMemberPhoto(this)">
+                <input type="text" id="memberPhoto" placeholder="上传后自动填写，也可粘贴图片地址" oninput="updateMemberPhotoPreview()">
+                <small class="form-field-hint">推荐使用正面证件照或半身照，竖版比例约 4:5。</small>
+              </div>
+            </div>
+            <div class="form-row member-display-row">
+              <div class="form-group">
+                <label>排序</label>
+                <input type="number" id="memberSort" value="0">
+                <small class="form-field-hint">数字越小越靠前；不确定可保持 0。</small>
+              </div>
+              <div class="form-group">
+                <label>前台状态</label>
+                <select id="memberActive">
+                  <option value="1">立即显示</option>
+                  <option value="0">暂时隐藏</option>
+                </select>
+              </div>
+            </div>
+          </section>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-secondary member-preview-link" id="memberPreviewLink" href="#" target="_blank" rel="noopener" hidden><i class="fas fa-external-link-alt"></i> 查看前台主页</a>
+        <span class="modal-footer-spacer"></span>
+        <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" id="memberSaveButton" onclick="saveMember()"><i class="fas fa-save"></i> 保存并生成主页</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    let members = [];
+
+    async function uploadMemberPhoto(input) {
+      if (!input.files[0]) return;
+      const form = new FormData();
+      form.append('file', input.files[0]);
+      const response = await fetch('/api/upload', { method:'POST', headers:{'Authorization':'Bearer '+token}, body:form });
+      const data = await response.json();
+      if (!data.success) return alert(data.message || '上传失败');
+      document.getElementById('memberPhoto').value = data.url;
+      updateMemberPhotoPreview();
+    }
+
+    const roleNames = { leader: '负责人', member: '教师' };
+    const typeNames = { teacher: '教师', student: '学生' };
+    const statusNames = { current: '在读', alumni: '已毕业' };
+
+    function setMemberPhotoFallback() {
+      const preview = document.getElementById('memberPhotoPreview');
+      preview.replaceChildren();
+      const icon = document.createElement('i');
+      icon.className = 'fas fa-user';
+      preview.appendChild(icon);
+    }
+
+    function updateMemberPhotoPreview() {
+      const preview = document.getElementById('memberPhotoPreview');
+      const url = document.getElementById('memberPhoto').value.trim();
+      if (!url) return setMemberPhotoFallback();
+      preview.replaceChildren();
+      const image = document.createElement('img');
+      image.alt = '成员照片预览';
+      image.src = url;
+      image.addEventListener('error', setMemberPhotoFallback, { once: true });
+      preview.appendChild(image);
+    }
+
+    function escapeHtml(value) {
+      const div = document.createElement('div');
+      div.textContent = String(value ?? '');
+      return div.innerHTML;
+    }
+
+    async function loadTeam() {
+      try {
+        const response = await fetch('/api/team', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await response.json();
+        if (data.success) {
+          members = data.members;
+          renderTeam();
+        }
+      } catch (error) {
+        console.error('加载失败:', error);
+      }
+    }
+
+    function renderTeam() {
+      const tbody = document.getElementById('teamTable');
+      tbody.innerHTML = members.map(m => `
+        <tr>
+          <td>${m.id}</td>
+          <td>${escapeHtml(m.name)}</td>
+          <td>${escapeHtml(m.title || '-')}</td>
+          <td><span class="badge ${m.member_type === 'student' ? 'badge-success' : 'badge-warning'}">${typeNames[m.member_type] || '教师'}</span></td>
+          <td>${m.member_type === 'student' ? statusNames[m.member_status] || '在读' : roleNames[m.role] || '教师'}</td>
+          <td>${escapeHtml(m.research_area || '-')}</td>
+          <td>${m.is_active ? '<span class="badge badge-success">显示</span>' : '<span class="badge badge-error">隐藏</span>'}</td>
+          <td class="actions">
+            <button class="btn btn-sm btn-primary" onclick="editMember(${m.id})"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="deleteMember(${m.id})"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function showAddModal() {
+      document.getElementById('modalTitle').textContent = '添加成员';
+      document.getElementById('memberId').value = '';
+      document.getElementById('memberName').value = '';
+      document.getElementById('memberTitle').value = '';
+      document.getElementById('memberType').value = 'teacher';
+      document.getElementById('memberRole').value = 'member';
+      document.getElementById('memberEmail').value = '';
+      document.getElementById('memberResearch').value = '';
+      document.getElementById('memberBio').value = '';
+      document.getElementById('memberStudentLevel').value = '';
+      document.getElementById('memberStatus').value = 'current';
+      document.getElementById('memberEnrollmentYear').value = '';
+      document.getElementById('memberGraduationYear').value = '';
+      document.getElementById('memberDestination').value = '';
+      document.getElementById('memberResume').value = '';
+      document.getElementById('memberUpdates').value = '';
+      document.getElementById('memberPhoto').value = '';
+      document.getElementById('memberSort').value = '0';
+      document.getElementById('memberActive').value = '1';
+      document.getElementById('memberPreviewLink').hidden = true;
+      setMemberPhotoFallback();
+      updateMemberTypeFields();
+      document.getElementById('teamModal').classList.add('active');
+    }
+
+    function editMember(id) {
+      const m = members.find(item => item.id === id);
+      if (!m) return;
+
+      document.getElementById('modalTitle').textContent = '编辑成员';
+      document.getElementById('memberId').value = m.id;
+      document.getElementById('memberName').value = m.name;
+      document.getElementById('memberTitle').value = m.title || '';
+      document.getElementById('memberType').value = m.member_type || 'teacher';
+      document.getElementById('memberRole').value = m.role;
+      document.getElementById('memberEmail').value = m.email || '';
+      document.getElementById('memberResearch').value = m.research_area || '';
+      document.getElementById('memberBio').value = m.bio || '';
+      document.getElementById('memberStudentLevel').value = m.student_level || '';
+      document.getElementById('memberStatus').value = m.member_status || 'current';
+      document.getElementById('memberEnrollmentYear').value = m.enrollment_year || '';
+      document.getElementById('memberGraduationYear').value = m.graduation_year || '';
+      document.getElementById('memberDestination').value = m.destination || '';
+      document.getElementById('memberResume').value = m.resume || '';
+      document.getElementById('memberUpdates').value = m.recent_updates || '';
+      document.getElementById('memberPhoto').value = m.photo_url || '';
+      document.getElementById('memberSort').value = m.sort_order || 0;
+      document.getElementById('memberActive').value = m.is_active;
+      const previewLink = document.getElementById('memberPreviewLink');
+      previewLink.href = '/team/' + m.id;
+      previewLink.hidden = !m.is_active;
+      updateMemberPhotoPreview();
+      updateMemberTypeFields();
+      document.getElementById('teamModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('teamModal').classList.remove('active');
+    }
+
+    function updateMemberTypeFields() {
+      const isStudent = document.getElementById('memberType').value === 'student';
+      document.querySelectorAll('.student-field').forEach(field => { field.hidden = !isStudent; });
+      document.querySelectorAll('.teacher-field').forEach(field => { field.hidden = isStudent; });
+      if (isStudent) document.getElementById('memberRole').value = 'member';
+    }
+
+    async function saveMember() {
+      if (!document.getElementById('teamForm').reportValidity()) return;
+      const id = document.getElementById('memberId').value;
+      const saveButton = document.getElementById('memberSaveButton');
+      const originalButtonHtml = saveButton.innerHTML;
+      saveButton.disabled = true;
+      saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在保存…';
+      const payload = {
+        name: document.getElementById('memberName').value,
+        title: document.getElementById('memberTitle').value,
+        member_type: document.getElementById('memberType').value,
+        role: document.getElementById('memberRole').value,
+        email: document.getElementById('memberEmail').value,
+        research_area: document.getElementById('memberResearch').value,
+        bio: document.getElementById('memberBio').value,
+        student_level: document.getElementById('memberStudentLevel').value,
+        member_status: document.getElementById('memberStatus').value,
+        enrollment_year: document.getElementById('memberEnrollmentYear').value || null,
+        graduation_year: document.getElementById('memberGraduationYear').value || null,
+        destination: document.getElementById('memberDestination').value,
+        resume: document.getElementById('memberResume').value,
+        recent_updates: document.getElementById('memberUpdates').value,
+        photo_url: document.getElementById('memberPhoto').value,
+        sort_order: parseInt(document.getElementById('memberSort').value),
+        is_active: parseInt(document.getElementById('memberActive').value)
+      };
+
+      try {
+        const url = id ? `/api/team/${id}` : '/api/team';
+        const method = id ? 'PUT' : 'POST';
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (data.success) {
+          closeModal();
+          loadTeam();
+          alert(id ? '更新成功，个人主页已同步。' : '添加成功，个人主页已自动生成。');
+        } else {
+          alert(data.message || '操作失败');
+        }
+      } catch (error) {
+        alert('操作失败');
+      } finally {
+        saveButton.disabled = false;
+        saveButton.innerHTML = originalButtonHtml;
+      }
+    }
+
+    async function deleteMember(id) {
+      if (!confirm('确定要删除此成员吗？')) return;
+      try {
+        const response = await fetch(`/api/team/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await response.json();
+        if (data.success) {
+          loadTeam();
+          alert('删除成功');
+        }
+      } catch (error) {
+        alert('删除失败');
+      }
+    }
+
+    async function logout() {
+      try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (e) {}
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/admin/login';
+    }
+
+    loadTeam();
+  </script>
+</body>
+</html>
