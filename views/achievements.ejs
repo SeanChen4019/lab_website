@@ -1,5 +1,10 @@
 <%- include('partials/header') %>
 
+<%
+  const countById = {};
+  sections.forEach(function (section) { countById[section.id] = section.items.length; });
+%>
+
 <section class="page-banner achievements-page-banner">
   <div class="container">
     <h1>研究成果</h1>
@@ -10,218 +15,84 @@
 <section class="page-content">
   <div class="container">
     <nav class="achievement-anchor-nav" aria-label="成果类型">
-      <a href="#projects"><i class="fas fa-project-diagram"></i> 项目 <b><%= projects.length %></b></a>
-      <a href="#patents"><i class="fas fa-certificate"></i> 专利 <b><%= patents.length %></b></a>
-      <a href="#papers"><i class="fas fa-book-open"></i> 论文 <b><%= papers.length %></b></a>
+      <a href="#projects"><i class="fas fa-project-diagram"></i> 项目 <b><%= countById.projects %></b></a>
+      <a href="#patents"><i class="fas fa-certificate"></i> 专利 <b><%= countById.patents %></b></a>
+      <a href="#papers"><i class="fas fa-book-open"></i> 论文 <b><%= countById.papers %></b></a>
     </nav>
 
-    <section class="content-card achievement-section" id="projects">
-      <div class="card-header">
-        <h2><i class="fas fa-project-diagram"></i> 项目</h2>
-      </div>
-      <div class="card-body">
-        <% if (projects.length) { %>
-          <div class="project-list">
-            <% projects.forEach(function(item) { %>
-              <article class="project-row">
-                <div class="project-row-head">
-                  <h3><%= item.title %></h3>
-                  <span class="project-status <%= item.status === '进行中' ? 'is-ongoing' : 'is-done' %>"><%= item.status || '进行中' %></span>
-                </div>
-                <p class="project-row-desc"><%= item.description %></p>
-                <p class="project-row-meta">
-                  <% if (item.funding_source) { %><span><i class="fas fa-landmark"></i> <%= item.funding_source %></span><% } %>
-                  <% if (item.start_date) { %><span><i class="far fa-calendar-alt"></i> <%= String(item.start_date).slice(0,7) %> ~ <%= item.end_date ? String(item.end_date).slice(0,7) : '至今' %></span><% } %>
-                </p>
-              </article>
-            <% }); %>
-          </div>
-        <% } else { %>
-          <p class="people-empty-inline">暂无项目资料，可在后台“项目”中添加。</p>
-        <% } %>
-      </div>
-    </section>
-
-    <section class="content-card achievement-section" id="patents">
-      <div class="card-header">
-        <h2><i class="fas fa-certificate"></i> 专利</h2>
-      </div>
-      <div class="card-body">
-        <% if (patents.length) { %>
-          <div class="patent-list">
-            <% patents.forEach(function(item) { %>
-              <article class="patent-row">
-                <div class="patent-badge <%= item.status === '已授权' ? 'is-granted' : 'is-pending' %>"><%= item.status || '已授权' %></div>
-                <div class="patent-main">
-                  <h3><%= item.title %></h3>
-                  <p class="patent-meta">
-                    <% if (item.kind) { %><span><%= item.kind %></span><% } %>
-                    <% if (item.patent_no) { %><span>专利号： <%= item.patent_no %></span><% } %>
-                    <% if (item.grant_date) { %><span><%= String(item.grant_date).slice(0,10) %></span><% } %>
-                  </p>
-                  <% if (item.inventors) { %><p class="patent-inventors"><i class="fas fa-users"></i> <%= item.inventors %></p><% } %>
-                </div>
-              </article>
-            <% }); %>
-          </div>
-        <% } else { %>
-          <p class="people-empty-inline">暂无专利资料。</p>
-        <% } %>
-      </div>
-    </section>
-
-    <section class="content-card achievement-section" id="papers">
-      <div class="card-header">
-        <h2><i class="fas fa-book-open"></i> 论文</h2>
-      </div>
-      <div class="card-body">
-        <% if (papers.length) { %>
-          <div class="pub-toolbar">
-            <div class="pub-search">
-              <label class="sr-only" for="pubSearch">搜索论文</label>
-              <input id="pubSearch" type="search" placeholder="搜索标题、作者、期刊…" autocomplete="off">
-              <i class="fas fa-search" aria-hidden="true"></i>
-            </div>
-            <label class="sr-only" for="pubYear">按年份筛选</label>
-            <select class="pub-select" id="pubYear">
-              <option value="">全部年份</option>
-            </select>
-            <label class="sr-only" for="pubType">按类型筛选</label>
-            <select class="pub-select" id="pubType">
-              <option value="">全部类型</option>
-              <option value="journal">期刊论文</option>
-              <option value="conference">会议论文</option>
-            </select>
-            <% if (typeof pubDirections !== 'undefined' && pubDirections.length) { %>
-              <label class="sr-only" for="pubDirection">按研究方向筛选</label>
-              <select class="pub-select" id="pubDirection">
-                <option value="">全部方向</option>
-                <% pubDirections.forEach(function(direction) { %>
-                  <option value="<%= direction %>"><%= direction %></option>
-                <% }); %>
-              </select>
-            <% } %>
-            <span class="pub-count"><b id="pubCount"><%= papers.length %></b> 篇</span>
-          </div>
-          <div id="pubList">
-            <%
-              // 服务端直接渲染完整列表，保证搜索引擎与禁用 JS 时同样可读；
-              // 前端脚本只负责按条件显示/隐藏，不重新生成内容。
-              const pubGroups = [];
-              papers.forEach(function (item) {
-                const yearKey = item.year || 0;
-                const last = pubGroups[pubGroups.length - 1];
-                if (last && last.year === yearKey) last.items.push(item);
-                else pubGroups.push({ year: yearKey, items: [item] });
-              });
-            %>
-            <% pubGroups.forEach(function (group) { %>
-              <div class="pub-year-group">
-                <div class="pub-year">
-                  <b><%= group.year || '未标注年份' %></b><i></i>
-                  <span data-group-count><%= group.items.length %> 篇</span>
-                </div>
-                <% group.items.forEach(function (item) {
-                     const isConference = item.pub_type === 'conference';
-                     const pdfUrl = item.pdf_url || item.link || '';
-                     const doiUrl = item.doi ? 'https://doi.org/' + item.doi : '';
-                     const searchText = [item.title, item.authors, item.venue, item.abstract].filter(Boolean).join(' ').toLowerCase();
-                %>
-                  <article class="pub-item"
-                           data-year="<%= group.year %>"
-                           data-type="<%= isConference ? 'conference' : 'journal' %>"
-                           data-direction="<%= item.direction || '' %>"
-                           data-search="<%= searchText %>">
-                    <div class="pub-kicker">
-                      <span class="pub-tag<%= isConference ? ' is-conf' : '' %>"><%= isConference ? '会议论文' : '期刊论文' %></span>
-                      <% if (item.level) { %><span class="pub-tag"><%= item.level %></span><% } %>
-                      <% if (item.direction) { %><span class="pub-tag is-dir"><%= item.direction %></span><% } %>
-                      <% if (item.venue) { %><span class="pub-venue"><%= item.venue %></span><% } %>
-                      <% if (item.year) { %><span><%= item.year %></span><% } %>
-                    </div>
-                    <h3 class="pub-title"><a href="/paper/<%= item.id %>"><%= item.title %></a></h3>
-                    <% if (item.authors) { %><p class="pub-authors"><%= item.authors %></p><% } %>
-                    <% if (item.abstract) { %><p class="pub-abstract"><%= item.abstract %></p><% } %>
-                    <div class="pub-links">
-                      <% if (pdfUrl) { %><a class="pub-link" href="<%= pdfUrl %>" target="_blank" rel="noopener">论文</a><% } %>
-                      <% if (item.code_url) { %><a class="pub-link is-code" href="<%= item.code_url %>" target="_blank" rel="noopener">代码</a><% } %>
-                      <% if (doiUrl) { %><a class="pub-link" href="<%= doiUrl %>" target="_blank" rel="noopener">DOI</a><% } %>
-                      <a class="pub-link is-more" href="/paper/<%= item.id %>">详情</a>
-                    </div>
-                  </article>
-                <% }); %>
-              </div>
-            <% }); %>
-            <div class="pub-empty" id="pubEmpty" hidden>没有符合当前筛选条件的论文</div>
-          </div>
-        <% } else { %>
-          <p class="people-empty-inline">暂无论文资料，可在后台“论文管理”中添加。</p>
-        <% } %>
-      </div>
-    </section>
+    <% sections.forEach(function (section) { %>
+      <%- include('partials/achievement-list', section) %>
+    <% }); %>
   </div>
 </section>
 
-<% if (papers.length) { %>
 <script>
   (function () {
-    const list = document.getElementById('pubList');
-    if (!list) return;
+    const toolbars = Array.prototype.slice.call(document.querySelectorAll('[data-ach-toolbar]'));
 
-    const searchInput = document.getElementById('pubSearch');
-    const yearSelect = document.getElementById('pubYear');
-    const typeSelect = document.getElementById('pubType');
-    const directionSelect = document.getElementById('pubDirection');
-    const countLabel = document.getElementById('pubCount');
-    const emptyState = document.getElementById('pubEmpty');
-    const items = Array.prototype.slice.call(list.querySelectorAll('.pub-item'));
-    const groups = Array.prototype.slice.call(list.querySelectorAll('.pub-year-group'));
+    toolbars.forEach(function (toolbar) {
+      const body = toolbar.parentElement;
+      const list = body.querySelector('[data-ach-list]');
+      if (!list) return;
 
-    // 列表已由服务端渲染，这里只做筛选：年份下拉按实际数据生成。
-    const years = Array.from(new Set(items.map(function (item) { return item.dataset.year; })))
-      .filter(function (year) { return year && year !== '0'; })
-      .sort(function (a, b) { return Number(b) - Number(a); });
-    years.forEach(function (year) {
-      const option = document.createElement('option');
-      option.value = year;
-      option.textContent = year + ' 年';
-      yearSelect.appendChild(option);
+      const unit = list.dataset.achUnit || '';
+      const searchInput = toolbar.querySelector('[data-ach-search]');
+      const countLabel = toolbar.querySelector('[data-ach-count]');
+      const emptyState = list.querySelector('[data-ach-empty]');
+      const items = Array.prototype.slice.call(list.querySelectorAll('.ach-item'));
+      const groups = Array.prototype.slice.call(list.querySelectorAll('.ach-year-group'));
+      const yearSelect = toolbar.querySelector('[data-ach-filter="year"]');
+      const facetSelects = Array.prototype.slice.call(toolbar.querySelectorAll('[data-ach-filter]'))
+        .filter(function (select) { return select !== yearSelect; });
+
+      // 列表已由服务端渲染，这里只做筛选；年份下拉按实际数据生成。
+      Array.from(new Set(items.map(function (item) { return item.dataset.year; })))
+        .filter(function (year) { return year && year !== '0'; })
+        .sort(function (a, b) { return Number(b) - Number(a); })
+        .forEach(function (year) {
+          const option = document.createElement('option');
+          option.value = year;
+          option.textContent = year + ' 年';
+          yearSelect.appendChild(option);
+        });
+
+      function apply() {
+        const keyword = (searchInput.value || '').trim().toLowerCase();
+        const year = yearSelect.value;
+        // 前后空格包裹，保证 key:value 精确匹配，避免「频谱认知」误配「频谱认知智能」
+        const activeFacets = facetSelects
+          .filter(function (select) { return select.value; })
+          .map(function (select) { return ' ' + select.dataset.achFilter + ':' + select.value + ' '; });
+        let visible = 0;
+
+        items.forEach(function (item) {
+          let show = true;
+          if (year && item.dataset.year !== year) show = false;
+          if (show && keyword && (item.dataset.search || '').indexOf(keyword) === -1) show = false;
+          if (show && activeFacets.length) {
+            const facets = item.dataset.facets || '';
+            show = activeFacets.every(function (token) { return facets.indexOf(token) !== -1; });
+          }
+          item.hidden = !show;
+          if (show) visible++;
+        });
+
+        groups.forEach(function (group) {
+          const shown = group.querySelectorAll('.ach-item:not([hidden])').length;
+          group.hidden = shown === 0;
+          const counter = group.querySelector('[data-ach-group-count]');
+          if (counter) counter.textContent = shown + ' ' + unit;
+        });
+
+        countLabel.textContent = visible;
+        emptyState.hidden = visible !== 0;
+      }
+
+      searchInput.addEventListener('input', apply);
+      yearSelect.addEventListener('change', apply);
+      facetSelects.forEach(function (select) { select.addEventListener('change', apply); });
     });
-
-    function apply() {
-      const keyword = (searchInput.value || '').trim().toLowerCase();
-      const year = yearSelect.value;
-      const type = typeSelect.value;
-      const direction = directionSelect ? directionSelect.value : '';
-      let visible = 0;
-
-      items.forEach(function (item) {
-        let show = true;
-        if (year && item.dataset.year !== year) show = false;
-        if (type && item.dataset.type !== type) show = false;
-        if (direction && item.dataset.direction !== direction) show = false;
-        if (keyword && (item.dataset.search || '').indexOf(keyword) === -1) show = false;
-        item.hidden = !show;
-        if (show) visible++;
-      });
-
-      groups.forEach(function (group) {
-        const shown = group.querySelectorAll('.pub-item:not([hidden])').length;
-        group.hidden = shown === 0;
-        const counter = group.querySelector('[data-group-count]');
-        if (counter) counter.textContent = shown + ' 篇';
-      });
-
-      countLabel.textContent = visible;
-      emptyState.hidden = visible !== 0;
-    }
-
-    searchInput.addEventListener('input', apply);
-    yearSelect.addEventListener('change', apply);
-    typeSelect.addEventListener('change', apply);
-    if (directionSelect) directionSelect.addEventListener('change', apply);
   })();
 </script>
-<% } %>
 
 <%- include('partials/footer') %>

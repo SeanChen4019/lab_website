@@ -738,12 +738,15 @@ router.get('/projects', authMiddleware, async (req, res) => {
 
 router.post('/projects', authMiddleware, validateLengths(['title', 'description', 'funding_source']), async (req, res) => {
   try {
-    const { title, description, funding_source, start_date, end_date, status, is_active = 1 } = req.body;
-    await db.run(
-      'INSERT INTO projects (title, description, funding_source, start_date, end_date, status, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [title, description, funding_source || '', start_date, end_date, status || '进行中', is_active]
+    const { title, description, funding_source, start_date, end_date, status, is_active = 1, content, cover_image } = req.body;
+    const checkedCover = normalizeUrl(cover_image);
+    if (checkedCover === null) return res.status(400).json({ success: false, message: '封面图地址不正确' });
+    const result = await db.run(
+      'INSERT INTO projects (title, description, funding_source, start_date, end_date, status, is_active, content, cover_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [title, description, funding_source || '', start_date, end_date, status || '进行中', is_active,
+       cleanRichContent(content), checkedCover]
     );
-    res.json({ success: true, message: '添加成功' });
+    res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/achievements#projects' });
   } catch (error) {
     res.status(500).json({ success: false, message: '添加失败' });
   }
@@ -751,10 +754,13 @@ router.post('/projects', authMiddleware, validateLengths(['title', 'description'
 
 router.put('/projects/:id', authMiddleware, validateLengths(['title', 'description', 'funding_source']), async (req, res) => {
   try {
-    const { title, description, funding_source, start_date, end_date, status, is_active } = req.body;
+    const { title, description, funding_source, start_date, end_date, status, is_active, content, cover_image } = req.body;
+    const checkedCover = normalizeUrl(cover_image);
+    if (checkedCover === null) return res.status(400).json({ success: false, message: '封面图地址不正确' });
     await db.run(
-      'UPDATE projects SET title = ?, description = ?, funding_source = ?, start_date = ?, end_date = ?, status = ?, is_active = ? WHERE id = ?',
-      [title, description, funding_source, start_date, end_date, status, is_active, req.params.id]
+      'UPDATE projects SET title = ?, description = ?, funding_source = ?, start_date = ?, end_date = ?, status = ?, is_active = ?, content = ?, cover_image = ? WHERE id = ?',
+      [title, description, funding_source, start_date, end_date, status, is_active,
+       cleanRichContent(content), checkedCover, req.params.id]
     );
     res.json({ success: true, message: '更新成功' });
   } catch (error) {
@@ -892,16 +898,22 @@ router.get('/patents', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/patents', authMiddleware, validateLengths(['title', 'patent_no', 'inventors']), async (req, res) => {
+router.post('/patents', authMiddleware, validateLengths(['title', 'patent_no', 'inventors', 'abstract']), async (req, res) => {
   try {
-    const { title, patent_no, inventors, kind, status, grant_date, sort_order, is_active = 1 } = req.body;
+    const { title, patent_no, inventors, kind, status, grant_date, sort_order, is_active = 1, abstract, content, cover_image } = req.body;
     const checkedTitle = requiredText(title, '专利名称', LIMITS.title);
     if (checkedTitle.error) return res.status(400).json({ success: false, message: checkedTitle.error });
     const checkedDate = normalizeDate(grant_date);
     if (!checkedDate) return res.status(400).json({ success: false, message: '授权日期格式不正确' });
+    const checkedCover = normalizeUrl(cover_image);
+    if (checkedCover === null) return res.status(400).json({ success: false, message: '封面图地址不正确' });
     const result = await db.run(
-      'INSERT INTO patents (title, patent_no, inventors, kind, status, grant_date, sort_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [checkedTitle.value, patent_no || '', inventors || '', kind || '发明专利', status || '已授权', checkedDate, Number(sort_order) || 0, normalizeFlag(is_active, 1)]
+      `INSERT INTO patents
+        (title, patent_no, inventors, kind, status, grant_date, sort_order, is_active, abstract, content, cover_image)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [checkedTitle.value, patent_no || '', inventors || '', kind || '发明专利', status || '已授权', checkedDate,
+       Number(sort_order) || 0, normalizeFlag(is_active, 1),
+       String(abstract || '').trim(), cleanRichContent(content), checkedCover]
     );
     res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/achievements#patents' });
   } catch (error) {
@@ -909,16 +921,23 @@ router.post('/patents', authMiddleware, validateLengths(['title', 'patent_no', '
   }
 });
 
-router.put('/patents/:id', authMiddleware, validateLengths(['title', 'patent_no', 'inventors']), async (req, res) => {
+router.put('/patents/:id', authMiddleware, validateLengths(['title', 'patent_no', 'inventors', 'abstract']), async (req, res) => {
   try {
-    const { title, patent_no, inventors, kind, status, grant_date, sort_order, is_active } = req.body;
+    const { title, patent_no, inventors, kind, status, grant_date, sort_order, is_active, abstract, content, cover_image } = req.body;
     const checkedTitle = requiredText(title, '专利名称', LIMITS.title);
     if (checkedTitle.error) return res.status(400).json({ success: false, message: checkedTitle.error });
     const checkedDate = normalizeDate(grant_date);
     if (!checkedDate) return res.status(400).json({ success: false, message: '授权日期格式不正确' });
+    const checkedCover = normalizeUrl(cover_image);
+    if (checkedCover === null) return res.status(400).json({ success: false, message: '封面图地址不正确' });
     await db.run(
-      'UPDATE patents SET title = ?, patent_no = ?, inventors = ?, kind = ?, status = ?, grant_date = ?, sort_order = ?, is_active = ? WHERE id = ?',
-      [checkedTitle.value, patent_no || '', inventors || '', kind || '发明专利', status || '已授权', checkedDate, Number(sort_order) || 0, normalizeFlag(is_active, 1), req.params.id]
+      `UPDATE patents SET
+        title = ?, patent_no = ?, inventors = ?, kind = ?, status = ?, grant_date = ?,
+        sort_order = ?, is_active = ?, abstract = ?, content = ?, cover_image = ?
+       WHERE id = ?`,
+      [checkedTitle.value, patent_no || '', inventors || '', kind || '发明专利', status || '已授权', checkedDate,
+       Number(sort_order) || 0, normalizeFlag(is_active, 1),
+       String(abstract || '').trim(), cleanRichContent(content), checkedCover, req.params.id]
     );
     res.json({ success: true, message: '更新成功' });
   } catch (error) {

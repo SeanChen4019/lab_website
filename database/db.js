@@ -116,6 +116,29 @@ async function getDb() {
       if (!paperColumns.has(column)) db.run(`ALTER TABLE papers ADD COLUMN ${column} ${definition}`);
     }
 
+    // 专利与项目的详情字段：同样用增量迁移，绝不覆盖现有数据。
+    // 详情页 /patent/:id、/project/:id 依赖这些字段。
+    function ensureColumns(table, columns) {
+      const existing = new Set();
+      const statement = db.prepare(`PRAGMA table_info(${table})`);
+      while (statement.step()) existing.add(statement.getAsObject().name);
+      statement.free();
+      for (const [column, definition] of Object.entries(columns)) {
+        if (!existing.has(column)) db.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+      }
+    }
+
+    ensureColumns('patents', {
+      abstract: "TEXT DEFAULT ''",
+      content: "TEXT DEFAULT ''",
+      cover_image: "TEXT DEFAULT ''"
+    });
+
+    ensureColumns('projects', {
+      content: "TEXT DEFAULT ''",
+      cover_image: "TEXT DEFAULT ''"
+    });
+
     db.run(`
       CREATE TABLE IF NOT EXISTS social_posts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

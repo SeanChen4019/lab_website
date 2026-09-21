@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/db');
 const { searchSite } = require('../services/site-search');
+const achievementItems = require('../services/achievement-items');
 
 function parseMemberUpdates(value) {
   return String(value || '').split(/\r?\n/).map((line, index) => {
@@ -205,24 +206,55 @@ router.get('/platforms', async (req, res) => {
 // 研究成果
 router.get('/achievements', async (req, res) => {
   try {
-    const projects = await db.all(
-      'SELECT * FROM projects WHERE is_active = 1 ORDER BY start_date DESC'
+    const projectRows = await db.all(
+      'SELECT * FROM projects WHERE is_active = 1 ORDER BY start_date DESC, id DESC'
     );
-    const patents = await db.all(
+    const patentRows = await db.all(
       'SELECT * FROM patents WHERE is_active = 1 ORDER BY grant_date DESC, sort_order ASC, id ASC'
     );
-    const papers = await db.all(
+    const paperRows = await db.all(
       'SELECT * FROM papers WHERE is_active = 1 ORDER BY year DESC, sort_order ASC, id ASC'
     );
-    res.render('achievements', {
-      title: '研究成果',
-      projects,
-      patents,
-      papers,
-      pubDirections: Array.from(new Set(papers.map(item => item.direction).filter(Boolean))),
-      journalPapers: papers.filter(item => (item.pub_type || 'journal') === 'journal'),
-      conferencePapers: papers.filter(item => item.pub_type === 'conference')
-    });
+
+    // 三类成果统一归一化成同一套条目结构，模板只写一次
+    const projects = achievementItems.projectItems(projectRows);
+    const patents = achievementItems.patentItems(patentRows);
+    const papers = achievementItems.paperItems(paperRows);
+
+    const sections = [
+      {
+        id: 'projects',
+        heading: '项目',
+        icon: 'fa-project-diagram',
+        unit: '项',
+        items: projects,
+        groups: achievementItems.groupByYear(projects),
+        filters: achievementItems.buildFilters('project', projects),
+        emptyText: '暂无项目资料，可在后台“项目”中添加。'
+      },
+      {
+        id: 'patents',
+        heading: '专利',
+        icon: 'fa-certificate',
+        unit: '项',
+        items: patents,
+        groups: achievementItems.groupByYear(patents),
+        filters: achievementItems.buildFilters('patent', patents),
+        emptyText: '暂无专利资料，可在后台“专利”中添加。'
+      },
+      {
+        id: 'papers',
+        heading: '论文',
+        icon: 'fa-book-open',
+        unit: '篇',
+        items: papers,
+        groups: achievementItems.groupByYear(papers),
+        filters: achievementItems.buildFilters('paper', papers),
+        emptyText: '暂无论文资料，可在后台“论文管理”中添加。'
+      }
+    ];
+
+    res.render('achievements', { title: '研究成果', sections });
   } catch (error) {
     console.error(error);
     res.status(500).render('error', { title: '错误', message: '页面加载失败', code: 500 });
@@ -262,6 +294,74 @@ router.get('/paper/:id', async (req, res) => {
     }
 
     res.render('paper-detail', { title: paper.title, paper, related });
+  } catch (error) {
+    console.error(error);
+    res.status(500).render('error', { title: '错误', message: '页面加载失败', code: 500 });
+  }
+});
+
+// 专利详情
+router.get('/patent/:id', async (req, res) => {
+  try {
+    const patent = await db.get(
+      'SELECT * FROM patents WHERE id = ? AND is_active = 1',
+      [req.params.id]
+    );
+
+    if (!patent) {
+      return res.status(404).render('error', { title: '未找到', message: '专利不存在', code: 404 });
+    }
+
+    // 同类型专利优先，不足 3 条时补上最新的其他专利
+    let relatedRows = await db.all(
+      'SELECT * FROM patents WHERE is_active = 1 AND kind = ? AND id != ? ORDER BY grant_date DESC, sort_order ASC, id ASC LIMIT 5',
+      [patent.kind || '发明专利', patent.id]
+    );
+    if (relatedRows.length < 3) {
+      const more = await db.all(
+        'SELECT * FROM patents WHERE is_active = 1 AND id != ? ORDER BY grant_date DESC, sort_order ASC, id ASC LIMIT 6',
+        [patent.id]
+      );
+      const seen = new Set(relatedRows.map(item => item.id));
+      for (const row of more) {
+        if (relatedRows.length >= 5) break;
+        if (!seen.has(row.id)) { relatedRows.push(row); seen.add(row.id); }
+      }
+    }
+
+    res.render('patent-detail', {
+      title: patent.title,
+      patent,
+      related: achievementItems.patentItems(relatedRows)
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).render('error', { title: '错误', message: '页面加载失败', code: 500 });
+  }
+});
+
+// 项目详情
+router.get('/project/:id', async (req, res) => {
+  try {
+    const project = await db.get(
+      'SELECT * FROM projects WHERE id = ? AND is_active = 1',
+      [req.params.id]
+    );
+
+    if (!project) {
+      return res.status(404).render('error', { title: '未找到', message: '项目不存在', code: 404 });
+    }
+
+    const relatedRows = await db.all(
+      'SELECT * FROM projects WHERE is_active = 1 AND id != ? ORDER BY start_date DESC, id DESC LIMIT 5',
+      [project.id]
+    );
+
+    res.render('project-detail', {
+      title: project.title,
+      project,
+      related: achievementItems.projectItems(relatedRows)
+    });
   } catch (error) {
     console.error(error);
     res.status(500).render('error', { title: '错误', message: '页面加载失败', code: 500 });

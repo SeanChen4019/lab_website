@@ -1,0 +1,95 @@
+<%
+  // 通用成果分段模板：项目 / 专利 / 论文共用。
+  // 入参（由 routes/index.js 的 sections 数组提供）：
+  //   id, heading, icon, unit, items, groups, filters, emptyText
+  // 列表全部由服务端渲染，前端脚本只做显示/隐藏筛选。
+%>
+<section class="content-card achievement-section" id="<%= id %>">
+  <div class="card-header">
+    <h2><i class="fas <%= icon %>"></i> <%= heading %></h2>
+  </div>
+  <div class="card-body">
+    <% if (!items.length) { %>
+      <p class="people-empty-inline"><%= emptyText %></p>
+    <% } else { %>
+      <div class="ach-toolbar" data-ach-toolbar>
+        <div class="ach-search">
+          <label class="sr-only" for="<%= id %>Search">搜索<%= heading %></label>
+          <input id="<%= id %>Search" type="search" placeholder="搜索标题、作者、关键词…" autocomplete="off" data-ach-search>
+          <i class="fas fa-search" aria-hidden="true"></i>
+        </div>
+
+        <label class="sr-only" for="<%= id %>Year">按年份筛选</label>
+        <select class="ach-select" id="<%= id %>Year" data-ach-filter="year">
+          <option value="">全部年份</option>
+        </select>
+
+        <% filters.forEach(function (group, index) { %>
+          <label class="sr-only" for="<%= id %>Filter<%= index %>"><%= group.allLabel %></label>
+          <select class="ach-select" id="<%= id %>Filter<%= index %>" data-ach-filter="<%= group.key %>">
+            <option value=""><%= group.allLabel %></option>
+            <% group.options.forEach(function (option) { %>
+              <option value="<%= option.value %>"><%= option.label %></option>
+            <% }); %>
+          </select>
+        <% }); %>
+
+        <span class="ach-count"><b data-ach-count><%= items.length %></b> <%= unit %></span>
+      </div>
+
+      <div class="ach-list" data-ach-list data-ach-unit="<%= unit %>">
+        <% groups.forEach(function (group) { %>
+          <div class="ach-year-group">
+            <div class="ach-year">
+              <b><%= group.year || '未标注年份' %></b><i></i>
+              <span data-ach-group-count><%= group.items.length %> <%= unit %></span>
+            </div>
+
+            <% group.items.forEach(function (item) { %>
+              <article class="ach-item<%= item.image ? ' has-media' : '' %>"
+                       data-year="<%= group.year %>"
+                       data-facets=" <%= item.facets.join(' ') %> "
+                       data-search="<%= [item.title, item.people, item.meta.join(' '), item.desc].join(' ').toLowerCase() %>">
+                <div class="ach-main">
+                  <div class="ach-tags">
+                    <% item.tags.forEach(function (tag) { %>
+                      <span class="ach-tag is-<%= tag.tone %>"><%= tag.text %></span>
+                    <% }); %>
+                    <% item.meta.forEach(function (text) { %>
+                      <span class="ach-meta"><%= text %></span>
+                    <% }); %>
+                  </div>
+
+                  <h3 class="ach-title"><a href="<%= item.url %>"><%= item.title %></a></h3>
+
+                  <% if (item.people) { %>
+                    <p class="ach-people"><%= item.people %></p>
+                  <% } %>
+
+                  <% if (item.desc) { %>
+                    <p class="ach-desc"><%= item.desc %></p>
+                  <% } %>
+
+                  <div class="ach-links">
+                    <% item.links.forEach(function (link) { %>
+                      <a class="ach-link is-<%= link.tone %>" href="<%= link.href %>" target="_blank" rel="noopener"><%= link.label %></a>
+                    <% }); %>
+                    <a class="ach-link is-more" href="<%= item.url %>">详情</a>
+                  </div>
+                </div>
+
+                <% if (item.image) { %>
+                  <div class="ach-media">
+                    <img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy">
+                  </div>
+                <% } %>
+              </article>
+            <% }); %>
+          </div>
+        <% }); %>
+
+        <div class="ach-empty" data-ach-empty hidden>没有符合当前筛选条件的<%= heading %></div>
+      </div>
+    <% } %>
+  </div>
+</section>

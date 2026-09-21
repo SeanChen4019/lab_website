@@ -18,20 +18,20 @@
   <div class="container">
     <div class="content-card">
       <div class="card-body">
-        <header class="paper-detail-head">
-          <div class="pub-kicker">
-            <span class="pub-tag<%= isConference ? ' is-conf' : '' %>"><%= isConference ? '会议论文' : '期刊论文' %></span>
-            <% if (paper.level) { %><span class="pub-tag"><%= paper.level %></span><% } %>
-            <% if (paper.direction) { %><span class="pub-tag is-dir"><%= paper.direction %></span><% } %>
+        <header class="detail-head">
+          <div class="ach-tags">
+            <span class="ach-tag"><%= isConference ? '会议论文' : '期刊论文' %></span>
+            <% if (paper.level) { %><span class="ach-tag"><%= paper.level %></span><% } %>
+            <% if (paper.direction) { %><span class="ach-tag is-direction"><%= paper.direction %></span><% } %>
           </div>
 
           <h1><%= paper.title %></h1>
 
           <% if (paper.authors) { %>
-            <p class="paper-detail-authors"><i class="fas fa-users"></i> <%= paper.authors %></p>
+            <p class="detail-people"><i class="fas fa-users"></i><%= paper.authors %></p>
           <% } %>
 
-          <p class="paper-detail-meta">
+          <p class="detail-meta">
             <% if (paper.venue) { %><span><i class="fas fa-book"></i><%= paper.venue %></span><% } %>
             <% if (paper.year) { %><span><i class="far fa-calendar-alt"></i><%= paper.year %> 年</span><% } %>
             <% if (paper.doi) { %><span><i class="fas fa-fingerprint"></i>DOI: <%= paper.doi %></span><% } %>
@@ -39,34 +39,34 @@
         </header>
 
         <% if (hasLinks) { %>
-          <nav class="paper-links-bar" aria-label="论文相关链接">
+          <nav class="detail-links" aria-label="论文相关链接">
             <% if (pdfUrl) { %>
-              <a class="pub-link" href="<%= pdfUrl %>" target="_blank" rel="noopener"><i class="fas fa-file-pdf"></i> 论文原文</a>
+              <a class="ach-link" href="<%= pdfUrl %>" target="_blank" rel="noopener"><i class="fas fa-file-pdf"></i> 论文原文</a>
             <% } %>
             <% if (paper.code_url) { %>
-              <a class="pub-link is-code" href="<%= paper.code_url %>" target="_blank" rel="noopener"><i class="fas fa-code"></i> 代码仓库</a>
+              <a class="ach-link is-code" href="<%= paper.code_url %>" target="_blank" rel="noopener"><i class="fas fa-code"></i> 代码仓库</a>
             <% } %>
             <% if (doiUrl) { %>
-              <a class="pub-link" href="<%= doiUrl %>" target="_blank" rel="noopener"><i class="fas fa-link"></i> DOI 页面</a>
+              <a class="ach-link" href="<%= doiUrl %>" target="_blank" rel="noopener"><i class="fas fa-link"></i> DOI 页面</a>
             <% } %>
           </nav>
         <% } %>
 
         <% if (paper.abstract) { %>
-          <section class="paper-abstract">
+          <section class="detail-abstract">
             <h2>Abstract · 摘要</h2>
             <p><%= paper.abstract %></p>
           </section>
         <% } %>
 
         <% if (paper.cover_image) { %>
-          <figure class="paper-cover">
+          <figure class="detail-cover">
             <img src="<%= paper.cover_image %>" alt="<%= paper.title %>">
           </figure>
         <% } %>
 
         <% if (paper.content) { %>
-          <div class="paper-body">
+          <div class="detail-body">
             <div class="article-content">
               <%- paper.content %>
             </div>
@@ -74,11 +74,11 @@
         <% } %>
 
         <% if (!paper.abstract && !paper.content && !paper.cover_image) { %>
-          <p class="pub-empty">该论文暂未填写简介，可在后台“论文管理”中补充摘要与图文说明。</p>
+          <p class="detail-empty">该论文暂未填写简介，可在后台“论文管理”中补充摘要与图文说明。</p>
         <% } %>
 
         <% if (related && related.length) { %>
-          <section class="paper-related">
+          <section class="detail-related">
             <h2><i class="fas fa-layer-group"></i> 相关论文</h2>
             <ul>
               <% related.forEach(function (item) { %>

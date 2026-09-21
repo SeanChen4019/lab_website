@@ -126,11 +126,11 @@
           <div class="form-group">
             <label>封面图（可选，详情页摘要下方展示）</label>
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-              <label class="publisher-upload-btn" style="cursor:pointer;padding:7px 14px;border:1px solid #ddd;border-radius:6px;background:#fafafa;font-size:13px;">
+              <label style="cursor:pointer;padding:7px 14px;border:1px solid #ddd;border-radius:6px;background:#fafafa;font-size:13px;">
                 <i class="fas fa-image"></i> 上传封面图
-                <input type="file" accept="image/*" hidden onchange="uploadToField(this, 'paperCoverImage', 'paperCoverPreview')">
+                <input type="file" accept="image/*" hidden onchange="adminMedia.uploadToField(this, 'paperCoverImage', 'paperCoverPreview')">
               </label>
-              <button type="button" class="btn btn-sm btn-secondary" onclick="clearCover()">清除</button>
+              <button type="button" class="btn btn-sm btn-secondary" onclick="setCover('')">清除</button>
               <img id="paperCoverPreview" alt="封面预览" style="display:none;max-height:70px;border:1px solid #e5e5e5;border-radius:4px;">
             </div>
             <input type="hidden" id="paperCoverImage">
@@ -151,53 +151,15 @@
   </div>
 
   <script src="/js/admin-editor.js"></script>
+  <script src="/js/admin-media.js"></script>
   <script>
     const token = localStorage.getItem('token');
     let papers = [];
     const paperEditor = new RichPublisher('paperContent', { token: () => token });
 
-    async function uploadToField(input, fieldId, previewId) {
-      if (!input.files[0]) return;
-      const form = new FormData();
-      form.append('file', input.files[0]);
-      try {
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + token },
-          body: form
-        });
-        const data = await response.json();
-        if (!data.success) return alert(data.message || '上传失败');
-        document.getElementById(fieldId).value = data.url;
-        if (previewId) {
-          const preview = document.getElementById(previewId);
-          preview.src = data.url;
-          preview.style.display = 'inline-block';
-        }
-      } catch (error) {
-        alert('上传失败');
-      } finally {
-        input.value = '';
-      }
-    }
-
-    function clearCover() {
-      document.getElementById('paperCoverImage').value = '';
-      const preview = document.getElementById('paperCoverPreview');
-      preview.removeAttribute('src');
-      preview.style.display = 'none';
-    }
-
     function setCover(url) {
       document.getElementById('paperCoverImage').value = url || '';
-      const preview = document.getElementById('paperCoverPreview');
-      if (url) {
-        preview.src = url;
-        preview.style.display = 'inline-block';
-      } else {
-        preview.removeAttribute('src');
-        preview.style.display = 'none';
-      }
+      adminMedia.setCover('paperCoverPreview', url || '');
     }
 
     async function loadPapers() {
@@ -224,11 +186,11 @@
       tbody.innerHTML = papers.map(p => `
         <tr>
           <td>${p.id}</td>
-          <td>${escapeHtml(p.title)}</td>
-          <td>${escapeHtml(p.venue || '-')}</td>
+          <td>${adminMedia.escapeHtml(p.title)}</td>
+          <td>${adminMedia.escapeHtml(p.venue || '-')}</td>
           <td>${p.year || '-'}</td>
           <td>${p.pub_type === 'conference' ? '会议' : '期刊'}</td>
-          <td>${hasIntro(p) ? '<span style="color:#2e7d32;">已填写</span>' : '<span style="color:#b26a00;">待补充</span>'}</td>
+          <td>${adminMedia.introBadge(hasIntro(p))}</td>
           <td class="actions">
             <a class="btn btn-sm btn-secondary" href="/paper/${p.id}" target="_blank" rel="noopener" title="前台预览"><i class="fas fa-eye"></i></a>
             <button class="btn btn-sm btn-primary" onclick="editPaper(${p.id})" title="编辑"><i class="fas fa-edit"></i></button>
@@ -236,12 +198,6 @@
           </td>
         </tr>
       `).join('');
-    }
-
-    function escapeHtml(value) {
-      return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
-      });
     }
 
     function showAddModal() {

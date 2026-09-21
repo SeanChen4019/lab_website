@@ -36,6 +36,7 @@
                 <th>专利号</th>
                 <th>状态</th>
                 <th>授权日期</th>
+                <th>简介</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -47,7 +48,7 @@
   </div>
 
   <div class="modal-overlay" id="patentModal">
-    <div class="modal" style="width: 700px;">
+    <div class="modal" style="width: 940px;">
       <div class="modal-header">
         <h3 id="modalTitle">添加专利</h3>
         <button class="modal-close" onclick="closeModal()">&times;</button>
@@ -55,10 +56,12 @@
       <div class="modal-body">
         <form id="patentForm">
           <input type="hidden" id="patentId">
+
           <div class="form-group">
             <label>专利名称 *</label>
             <input type="text" id="patentTitle" required>
           </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>专利号</label>
@@ -70,13 +73,16 @@
                 <option value="发明专利">发明专利</option>
                 <option value="实用新型">实用新型</option>
                 <option value="外观设计">外观设计</option>
+                <option value="软件著作权">软件著作权</option>
               </select>
             </div>
           </div>
+
           <div class="form-group">
             <label>发明人（分号分隔）</label>
             <input type="text" id="patentInventors">
           </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>状态</label>
@@ -98,18 +104,45 @@
               </select>
             </div>
           </div>
+
+          <div class="form-group">
+            <label>摘要（列表页显示前 3 行，详情页顶部摘要框）</label>
+            <textarea id="patentAbstract" rows="5" placeholder="用一段话概括这项专利解决的问题、技术方案与效果。"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>封面图（可选，列表页右侧与详情页展示）</label>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <label style="cursor:pointer;padding:7px 14px;border:1px solid #ddd;border-radius:6px;background:#fafafa;font-size:13px;">
+                <i class="fas fa-image"></i> 上传封面图
+                <input type="file" accept="image/*" hidden onchange="adminMedia.uploadToField(this, 'patentCoverImage', 'patentCoverPreview')">
+              </label>
+              <button type="button" class="btn btn-sm btn-secondary" onclick="adminMedia.clearCover('patentCoverImage', 'patentCoverPreview')">清除</button>
+              <img id="patentCoverPreview" alt="封面预览" style="display:none;max-height:70px;border:1px solid #e5e5e5;border-radius:4px;">
+            </div>
+            <input type="hidden" id="patentCoverImage">
+          </div>
+
+          <div class="form-group">
+            <label>专利简介正文（可插入图片、结构图、证书截图，自由排版）</label>
+            <textarea id="patentContent" rows="8" placeholder="可写技术背景、方案要点、创新点、应用情况等。"></textarea>
+          </div>
         </form>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+        <button class="btn btn-warning" onclick="previewPatent()"><i class="fas fa-eye"></i> 发布预览</button>
         <button class="btn btn-primary" onclick="savePatent()">保存</button>
       </div>
     </div>
   </div>
 
+  <script src="/js/admin-editor.js"></script>
+  <script src="/js/admin-media.js"></script>
   <script>
     const token = localStorage.getItem('token');
     let patents = [];
+    const patentEditor = new RichPublisher('patentContent', { token: () => token });
 
     async function loadPatents() {
       try {
@@ -126,18 +159,24 @@
       }
     }
 
+    function hasIntro(p) {
+      return Boolean((p.abstract || '').trim() || (p.content || '').trim() || p.cover_image);
+    }
+
     function renderPatents() {
       const tbody = document.getElementById('patentsTable');
       tbody.innerHTML = patents.map(p => `
         <tr>
           <td>${p.id}</td>
-          <td>${p.title}</td>
-          <td>${p.patent_no || '-'}</td>
-          <td><span class="badge ${p.status === '已授权' ? 'badge-success' : 'badge-warning'}">${p.status}</span></td>
+          <td>${adminMedia.escapeHtml(p.title)}</td>
+          <td>${adminMedia.escapeHtml(p.patent_no || '-')}</td>
+          <td><span class="badge ${p.status === '已授权' ? 'badge-success' : 'badge-warning'}">${adminMedia.escapeHtml(p.status || '')}</span></td>
           <td>${p.grant_date || '-'}</td>
+          <td>${adminMedia.introBadge(hasIntro(p))}</td>
           <td class="actions">
-            <button class="btn btn-sm btn-primary" onclick="editPatent(${p.id})"><i class="fas fa-edit"></i></button>
-            <button class="btn btn-sm btn-danger" onclick="deletePatent(${p.id})"><i class="fas fa-trash"></i></button>
+            <a class="btn btn-sm btn-secondary" href="/patent/${p.id}" target="_blank" rel="noopener" title="前台预览"><i class="fas fa-eye"></i></a>
+            <button class="btn btn-sm btn-primary" onclick="editPatent(${p.id})" title="编辑"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="deletePatent(${p.id})" title="删除"><i class="fas fa-trash"></i></button>
           </td>
         </tr>
       `).join('');
@@ -153,6 +192,9 @@
       document.getElementById('patentStatus').value = '已授权';
       document.getElementById('patentDate').value = new Date().toISOString().slice(0, 10);
       document.getElementById('patentActive').value = '1';
+      document.getElementById('patentAbstract').value = '';
+      adminMedia.clearCover('patentCoverImage', 'patentCoverPreview');
+      patentEditor.setContent('');
       document.getElementById('patentModal').classList.add('active');
     }
 
@@ -161,13 +203,17 @@
       if (!p) return;
       document.getElementById('modalTitle').textContent = '编辑专利';
       document.getElementById('patentId').value = p.id;
-      document.getElementById('patentTitle').value = p.title;
+      document.getElementById('patentTitle').value = p.title || '';
       document.getElementById('patentNo').value = p.patent_no || '';
       document.getElementById('patentKind').value = p.kind || '发明专利';
       document.getElementById('patentInventors').value = p.inventors || '';
       document.getElementById('patentStatus').value = p.status || '已授权';
       document.getElementById('patentDate').value = p.grant_date || '';
       document.getElementById('patentActive').value = p.is_active;
+      document.getElementById('patentAbstract').value = p.abstract || '';
+      document.getElementById('patentCoverImage').value = p.cover_image || '';
+      adminMedia.setCover('patentCoverPreview', p.cover_image || '');
+      patentEditor.setContent(p.content || '');
       document.getElementById('patentModal').classList.add('active');
     }
 
@@ -175,17 +221,32 @@
       document.getElementById('patentModal').classList.remove('active');
     }
 
-    async function savePatent() {
-      const id = document.getElementById('patentId').value;
-      const payload = {
+    function collectPayload() {
+      return {
         title: document.getElementById('patentTitle').value,
         patent_no: document.getElementById('patentNo').value,
         kind: document.getElementById('patentKind').value,
         inventors: document.getElementById('patentInventors').value,
         status: document.getElementById('patentStatus').value,
         grant_date: document.getElementById('patentDate').value,
-        is_active: parseInt(document.getElementById('patentActive').value)
+        abstract: document.getElementById('patentAbstract').value,
+        cover_image: document.getElementById('patentCoverImage').value,
+        content: patentEditor.getContent(),
+        is_active: parseInt(document.getElementById('patentActive').value, 10)
       };
+    }
+
+    function previewPatent() {
+      const payload = collectPayload();
+      const meta = [payload.patent_no, payload.kind, payload.status, payload.grant_date].filter(Boolean).join(' · ');
+      patentEditor.preview(payload.title, meta);
+    }
+
+    async function savePatent() {
+      const id = document.getElementById('patentId').value;
+      const payload = collectPayload();
+      if (!payload.title.trim()) return alert('请填写专利名称');
+      if (!payload.grant_date) return alert('请填写授权日期');
       try {
         const url = id ? `/api/patents/${id}` : '/api/patents';
         const method = id ? 'PUT' : 'POST';

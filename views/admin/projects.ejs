@@ -35,6 +35,7 @@
                 <th>项目名称</th>
                 <th>资助来源</th>
                 <th>状态</th>
+                <th>简介</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -46,7 +47,7 @@
   </div>
 
   <div class="modal-overlay" id="projectModal">
-    <div class="modal" style="width: 700px;">
+    <div class="modal" style="width: 940px;">
       <div class="modal-header">
         <h3 id="modalTitle">添加项目</h3>
         <button class="modal-close" onclick="closeModal()">&times;</button>
@@ -54,18 +55,22 @@
       <div class="modal-body">
         <form id="projectForm">
           <input type="hidden" id="projectId">
+
           <div class="form-group">
             <label>项目名称 *</label>
             <input type="text" id="projectTitle" required>
           </div>
+
           <div class="form-group">
-            <label>项目描述</label>
-            <textarea id="projectDesc" rows="4"></textarea>
+            <label>项目简介（列表页显示前 3 行，详情页顶部简介框）</label>
+            <textarea id="projectDesc" rows="4" placeholder="用一段话概括项目的研究目标与主要内容。"></textarea>
           </div>
+
           <div class="form-group">
             <label>资助来源</label>
-            <input type="text" id="projectFunding">
+            <input type="text" id="projectFunding" placeholder="如 国家自然科学基金重点项目">
           </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>开始日期</label>
@@ -83,26 +88,48 @@
                 <option value="已结题">已结题</option>
               </select>
             </div>
+            <div class="form-group">
+              <label>是否显示</label>
+              <select id="projectActive">
+                <option value="1">显示</option>
+                <option value="0">隐藏</option>
+              </select>
+            </div>
           </div>
+
           <div class="form-group">
-            <label>是否显示</label>
-            <select id="projectActive">
-              <option value="1">显示</option>
-              <option value="0">隐藏</option>
-            </select>
+            <label>封面图（可选，列表页右侧与详情页展示）</label>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <label style="cursor:pointer;padding:7px 14px;border:1px solid #ddd;border-radius:6px;background:#fafafa;font-size:13px;">
+                <i class="fas fa-image"></i> 上传封面图
+                <input type="file" accept="image/*" hidden onchange="adminMedia.uploadToField(this, 'projectCoverImage', 'projectCoverPreview')">
+              </label>
+              <button type="button" class="btn btn-sm btn-secondary" onclick="adminMedia.clearCover('projectCoverImage', 'projectCoverPreview')">清除</button>
+              <img id="projectCoverPreview" alt="封面预览" style="display:none;max-height:70px;border:1px solid #e5e5e5;border-radius:4px;">
+            </div>
+            <input type="hidden" id="projectCoverImage">
+          </div>
+
+          <div class="form-group">
+            <label>项目详情正文（可插入图片、系统图、成果图，自由排版）</label>
+            <textarea id="projectContent" rows="8" placeholder="可写研究背景、研究内容、阶段性成果等。"></textarea>
           </div>
         </form>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+        <button class="btn btn-warning" onclick="previewProject()"><i class="fas fa-eye"></i> 发布预览</button>
         <button class="btn btn-primary" onclick="saveProject()">保存</button>
       </div>
     </div>
   </div>
 
+  <script src="/js/admin-editor.js"></script>
+  <script src="/js/admin-media.js"></script>
   <script>
     const token = localStorage.getItem('token');
     let projects = [];
+    const projectEditor = new RichPublisher('projectContent', { token: () => token });
 
     async function loadProjects() {
       try {
@@ -119,17 +146,23 @@
       }
     }
 
+    function hasIntro(p) {
+      return Boolean((p.description || '').trim() || (p.content || '').trim() || p.cover_image);
+    }
+
     function renderProjects() {
       const tbody = document.getElementById('projectsTable');
       tbody.innerHTML = projects.map(p => `
         <tr>
           <td>${p.id}</td>
-          <td>${p.title}</td>
-          <td>${p.funding_source || '-'}</td>
-          <td><span class="badge ${p.status === '进行中' ? 'badge-success' : 'badge-warning'}">${p.status}</span></td>
+          <td>${adminMedia.escapeHtml(p.title)}</td>
+          <td>${adminMedia.escapeHtml(p.funding_source || '-')}</td>
+          <td><span class="badge ${p.status === '进行中' ? 'badge-success' : 'badge-warning'}">${adminMedia.escapeHtml(p.status || '')}</span></td>
+          <td>${adminMedia.introBadge(hasIntro(p))}</td>
           <td class="actions">
-            <button class="btn btn-sm btn-primary" onclick="editProject(${p.id})"><i class="fas fa-edit"></i></button>
-            <button class="btn btn-sm btn-danger" onclick="deleteProject(${p.id})"><i class="fas fa-trash"></i></button>
+            <a class="btn btn-sm btn-secondary" href="/project/${p.id}" target="_blank" rel="noopener" title="前台预览"><i class="fas fa-eye"></i></a>
+            <button class="btn btn-sm btn-primary" onclick="editProject(${p.id})" title="编辑"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="deleteProject(${p.id})" title="删除"><i class="fas fa-trash"></i></button>
           </td>
         </tr>
       `).join('');
@@ -145,6 +178,8 @@
       document.getElementById('projectEnd').value = '';
       document.getElementById('projectStatus').value = '进行中';
       document.getElementById('projectActive').value = '1';
+      adminMedia.clearCover('projectCoverImage', 'projectCoverPreview');
+      projectEditor.setContent('');
       document.getElementById('projectModal').classList.add('active');
     }
 
@@ -154,13 +189,16 @@
 
       document.getElementById('modalTitle').textContent = '编辑项目';
       document.getElementById('projectId').value = p.id;
-      document.getElementById('projectTitle').value = p.title;
+      document.getElementById('projectTitle').value = p.title || '';
       document.getElementById('projectDesc').value = p.description || '';
       document.getElementById('projectFunding').value = p.funding_source || '';
       document.getElementById('projectStart').value = p.start_date || '';
       document.getElementById('projectEnd').value = p.end_date || '';
-      document.getElementById('projectStatus').value = p.status;
+      document.getElementById('projectStatus').value = p.status || '进行中';
       document.getElementById('projectActive').value = p.is_active;
+      document.getElementById('projectCoverImage').value = p.cover_image || '';
+      adminMedia.setCover('projectCoverPreview', p.cover_image || '');
+      projectEditor.setContent(p.content || '');
       document.getElementById('projectModal').classList.add('active');
     }
 
@@ -168,17 +206,30 @@
       document.getElementById('projectModal').classList.remove('active');
     }
 
-    async function saveProject() {
-      const id = document.getElementById('projectId').value;
-      const payload = {
+    function collectPayload() {
+      return {
         title: document.getElementById('projectTitle').value,
         description: document.getElementById('projectDesc').value,
         funding_source: document.getElementById('projectFunding').value,
         start_date: document.getElementById('projectStart').value,
         end_date: document.getElementById('projectEnd').value,
         status: document.getElementById('projectStatus').value,
-        is_active: parseInt(document.getElementById('projectActive').value)
+        cover_image: document.getElementById('projectCoverImage').value,
+        content: projectEditor.getContent(),
+        is_active: parseInt(document.getElementById('projectActive').value, 10)
       };
+    }
+
+    function previewProject() {
+      const payload = collectPayload();
+      const meta = [payload.funding_source, payload.status, payload.start_date].filter(Boolean).join(' · ');
+      projectEditor.preview(payload.title, meta);
+    }
+
+    async function saveProject() {
+      const id = document.getElementById('projectId').value;
+      const payload = collectPayload();
+      if (!payload.title.trim()) return alert('请填写项目名称');
 
       try {
         const url = id ? `/api/projects/${id}` : '/api/projects';
@@ -193,6 +244,8 @@
           closeModal();
           loadProjects();
           alert(id ? '更新成功' : '添加成功');
+        } else {
+          alert(data.message || '操作失败');
         }
       } catch (error) {
         alert('操作失败');

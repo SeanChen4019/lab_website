@@ -1,0 +1,100 @@
+<%- include('partials/header') %>
+
+<%
+  const patentKind = patent.kind || '发明专利';
+  const patentStatus = patent.status || '已授权';
+  const grantDate = patent.grant_date ? String(patent.grant_date).slice(0, 10) : '';
+%>
+
+<section class="page-banner">
+  <div class="container">
+    <h1>专利详情</h1>
+    <p><%= patentKind %><%= grantDate ? ' · ' + grantDate : '' %></p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container">
+    <div class="content-card">
+      <div class="card-body">
+        <header class="detail-head">
+          <div class="ach-tags">
+            <span class="ach-tag"><%= patentKind %></span>
+            <span class="ach-tag <%= patentStatus === '已授权' ? 'is-status' : 'is-status-pending' %>"><%= patentStatus %></span>
+          </div>
+
+          <h1><%= patent.title %></h1>
+
+          <% if (patent.inventors) { %>
+            <p class="detail-people"><i class="fas fa-users"></i><%= patent.inventors %></p>
+          <% } %>
+
+          <p class="detail-meta">
+            <% if (patent.patent_no) { %><span><i class="fas fa-certificate"></i>专利号 <%= patent.patent_no %></span><% } %>
+            <% if (grantDate) { %><span><i class="far fa-calendar-alt"></i><%= grantDate %> 授权</span><% } %>
+          </p>
+        </header>
+
+        <% if (patent.abstract) { %>
+          <section class="detail-abstract">
+            <h2>Abstract · 摘要</h2>
+            <p><%= patent.abstract %></p>
+          </section>
+        <% } %>
+
+        <% if (patent.cover_image) { %>
+          <figure class="detail-cover">
+            <img src="<%= patent.cover_image %>" alt="<%= patent.title %>">
+          </figure>
+        <% } %>
+
+        <% if (patent.content) { %>
+          <div class="detail-body">
+            <div class="article-content">
+              <%- patent.content %>
+            </div>
+          </div>
+        <% } %>
+
+        <% if (!patent.abstract && !patent.content && !patent.cover_image) { %>
+          <p class="detail-empty">该专利暂未填写简介，可在后台“专利”中补充摘要与图文说明。</p>
+        <% } %>
+
+        <% if (related && related.length) { %>
+          <section class="detail-related">
+            <h2><i class="fas fa-layer-group"></i> 相关专利</h2>
+            <ul>
+              <% related.forEach(function (item) { %>
+                <li>
+                  <a href="<%= item.url %>"><%= item.title %></a>
+                  <small><%= [item.meta.join(' · '), item.year || ''].filter(Boolean).join(' · ') %></small>
+                </li>
+              <% }); %>
+            </ul>
+          </section>
+        <% } %>
+      </div>
+
+      <div class="card-footer">
+        <a href="/achievements#patents" class="back-btn">
+          <i class="fas fa-arrow-left"></i> 返回研究成果
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script type="application/ld+json">
+<%- JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'Patent',
+  name: patent.title,
+  patentNumber: patent.patent_no || undefined,
+  inventor: (patent.inventors || '').split(/[;；,，]/).map(function (name) { return { '@type': 'Person', name: name.trim() }; }).filter(function (item) { return item.name; }),
+  description: patent.abstract || undefined,
+  datePublished: grantDate || undefined,
+  inLanguage: 'zh-CN'
+}).replace(/</g, '\\u003c') %>
+</script>
+
+<%- include('partials/footer') %>
