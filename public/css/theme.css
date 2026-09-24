@@ -1208,3 +1208,21 @@ body,
     isolation: isolate;
   }
 }
+
+/* --- hero 第二个按钮（描边款）加半透明深色底 ---
+   原来是纯描边 + 白字，压在照片上时完全看背后运气：
+   桌面端背后是深色树影，没问题；手机端照片裁切位置不同，
+   正好落在阳光下的路面（很亮），白字就糊掉了，看着像按钮消失了。
+   加一层 rgba(12,12,14,.45) 的底，任何背景上都读得清。 */
+.hero-actions a + a {
+  background: rgba(12, 12, 14, .45) !important;
+  border-color: rgba(255, 255, 255, .5) !important;
+  color: #ffffff !important;
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .5) !important;
+}
+.hero-actions a + a:hover {
+  background: rgba(12, 12, 14, .62) !important;
+  border-color: rgba(255, 255, 255, .75) !important;
+}
