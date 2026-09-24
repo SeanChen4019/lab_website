@@ -1,0 +1,1155 @@
+/* ==========================================================================
+   站点统一修复层
+   用途：① 修正全站左对齐错位  ② Apple 风格配色
+   说明：本文件不修改 style.css / refinement.css / achievements.css 的任何内容，
+        只在其后加载做覆盖。删掉本文件和 header.ejs 里的那行 <link> 即可完全还原。
+   ========================================================================== */
+
+/* ==========================================================================
+   第一部分 · 对齐修复
+   ========================================================================== */
+
+/* --- 1. 统一内容轨道：原来有 1300 / 1240 / 1200 三种宽度，收敛成 1240 ---
+   来源：refinement.css 末尾 .container { width: min(1300px, ...) }
+        refinement.css:150 .about-page > .container { max-width: 1200px }      */
+.container {
+  width: min(1240px, calc(100% - 48px)) !important;
+  max-width: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+.about-page > .container { max-width: none !important; }
+
+/* --- 2. 卡片不再二次居中 ---
+   来源：.is-inner .content-card { max-width:1240px; margin:0 auto }
+   在 1300px 容器里被居中，左右各缩进 30px，导致卡片与 banner 标题错开       */
+.is-inner .content-card {
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* --- 3. 卡片标题与卡片正文同轨 ---
+   来源：refinement.css:71 .is-inner .card-header { padding: 25px 28px 19px }
+        style.css:2381  .is-inner .card-body   { padding: 28px 32px 32px }
+   28px vs 32px 差 4px，标题永远比正文靠左                                 */
+.is-inner .card-header,
+.is-inner .content-card:first-child .card-header {
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+}
+
+/* --- 4. 详情页：正文不再居中，与摘要文字同一条竖线 ---
+   来源：style.css:2139 .article-content { max-width:900px; margin:0 auto }
+        style.css:2402 .is-inner .article-content { max-width:1100px }
+   居中导致正文左边缘随屏幕宽度漂移，和固定内边距的摘要文字对不上。
+   摘要文字 = 卡片内边距32 + 左边框4 + 内边距28 = 64px
+   正文     = 卡片内边距32 + 本文件 padding-left 32 = 64px                   */
+.detail-body .article-content {
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+}
+
+/* --- 5. 详情页元信息行被居中了 ---
+   来源：style.css:2401 .is-inner .detail-meta { justify-content: center }
+   标题和作者都是左对齐，只有期刊/年份那行居中，看着像没对齐             */
+.is-inner .detail-meta { justify-content: flex-start !important; }
+
+/* ==========================================================================
+   第二部分 · Apple 风格配色
+   把原来 8 种近似灰 / 7 种蓝 / 两套冲突方向，收敛成 Apple 的一套中性灰阶 + 单一蓝色。
+   ========================================================================== */
+
+:root {
+  --ap-ink:    #1d1d1f;   /* 主文字（Apple 的近黑） */
+  --ap-ink-2:  #6e6e73;   /* 次级文字 */
+  --ap-ink-3:  #86868b;   /* 辅助文字 */
+  --ap-blue:   #0071e3;   /* 唯一强调色 */
+  --ap-blue-d: #0077ed;
+  --ap-bg-2:   #fbfbfd;   /* 页面底色 */
+  --ap-bg-3:   #f5f5f7;   /* 分区/卡片底色 */
+  --ap-line:   #d2d2d7;
+  --ap-line-2: #e8e8ed;
+  --ap-dark:   #1d1d1f;
+
+  /* 接管站点原有变量 */
+  --text-color: #1d1d1f;
+  --text-light: #6e6e73;
+  --text-muted: #86868b;
+  --primary-color: #1d1d1f;
+  --primary-light: #0071e3;
+  --primary-dark: #000000;
+  --secondary-color: #0071e3;
+  --accent-color: #0071e3;
+  --bg-color: #fbfbfd;
+  --bg-alt: #f5f5f7;
+  --border-color: #e8e8ed;
+  --shadow: 0 1px 3px rgba(0,0,0,.06);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,.08);
+
+  --lab-blue: #0071e3;
+  --lab-deep: #1d1d1f;
+  --lab-cyan: #0071e3;
+  --lab-red: #d70015;
+  --lab-ink: #1d1d1f;
+  --lab-muted: #6e6e73;
+  --lab-line: #e8e8ed;
+
+  --surface-paper: #fbfbfd;
+  --ink-navy: #1d1d1f;
+  --ink-body: #6e6e73;
+  --accent-teal: #0071e3;
+  --line-soft: #e8e8ed;
+
+  --ach-ink: #1d1d1f;
+  --ach-ink-soft: #6e6e73;
+  --ach-ink-mute: #86868b;
+  --ach-line: #e8e8ed;
+  --ach-line-soft: #e8e8ed;
+  --ach-accent: #0071e3;
+  --ach-blue: #0071e3;
+  --ach-amber: #a05a00;
+  --ach-green: #1d7a3f;
+  --ach-bg-soft: #f5f5f7;
+}
+
+/* --- 字体：丢掉 Times New Roman，换 Apple 系统字栈 --- */
+body,
+input, select, textarea, button,
+h1, h2, h3, h4, h5, h6,
+.ach-year b, .history-year, .brand-copy small, .home-title span {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro SC", "SF Pro Text",
+               "SF Pro Display", "Helvetica Neue", "PingFang SC",
+               "Microsoft YaHei", "Noto Sans SC", sans-serif !important;
+}
+
+body {
+  color: #1d1d1f !important;
+  background: #fbfbfd !important;
+  font-size: 16px !important;
+  line-height: 1.7 !important;
+  letter-spacing: -.006em;
+}
+
+h1, h2, h3, h4 { color: #1d1d1f !important; font-weight: 600 !important; letter-spacing: -.022em !important; }
+
+/* --- 顶部导航 ---
+   注意：原站是 linear-gradient 从深到透明的叠加层（style.css:2162/2257 的
+   .is-home/.is-inner .site-header 都是 position:absolute 压在 hero 上），
+   必须保持"半透明 + 底部渐隐"，不能改成实心色块，否则 hero 透不过来。
+   具体透明度见第八部分第 7 条。这里**不要加 backdrop-filter**：
+   .nav-dropdown 是它的子元素，父级有 backdrop-filter 会把背景"压平"，
+   导致下拉菜单自己的 backdrop-filter 失效（Chrome 已知行为）。 */
+.site-header {
+  border-bottom: none !important;
+}
+.utility-bar {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(255,255,255,.14) !important;
+  color: #a1a1a6 !important;
+}
+.utility-bar span, .utility-inner > span { color: #a1a1a6 !important; }
+.utility-links a { color: #a1a1a6 !important; }
+.utility-links a:hover { color: #f5f5f7 !important; }
+
+.brand-copy strong { color: #f5f5f7 !important; font-weight: 600 !important; letter-spacing: -.02em !important; }
+.brand-copy small { color: #86868b !important; letter-spacing: .06em !important; }
+
+.main-nav { background: transparent !important; border-top: 1px solid rgba(255,255,255,.12) !important; }
+.main-nav li > a { color: #d6d6da !important; font-weight: 400 !important; }
+.main-nav li > a:hover { color: #ffffff !important; background: rgba(255,255,255,.07) !important; }
+.main-nav li.active > a {
+  color: #ffffff !important;
+  background: rgba(255,255,255,.07) !important;
+  box-shadow: inset 0 -2px #0071e3 !important;
+}
+.nav-dropdown {
+  background: rgba(29,29,31,.97) !important;
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,.1) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.32) !important;
+}
+.nav-dropdown a { color: #d6d6da !important; }
+.nav-dropdown a:hover { color: #ffffff !important; background: rgba(255,255,255,.08) !important; }
+
+.header-search, .mobile-nav-search input {
+  border: 1px solid rgba(255,255,255,.22) !important;
+  background: rgba(255,255,255,.07) !important;
+  border-radius: 980px !important;
+}
+.header-search input { color: #f5f5f7 !important; background: transparent !important; }
+.header-search input::placeholder { color: #86868b !important; }
+.header-search:focus-within { border-color: #0071e3 !important; background: rgba(255,255,255,.12) !important; }
+
+/* --- 首页 hero：标题必须白色（否则被上面的 h1~h4 通用规则压成近黑，压在深色照片上看不清）--- */
+.hero-intro h1 { color: #ffffff !important; }
+.hero-intro p { color: #e0e8ee !important; }
+.hero-eyebrow { color: #bed7e9 !important; }
+.hero-actions a { color: #1d1d1f !important; }
+.hero-actions a + a { color: #ffffff !important; }
+
+/* --- 页头横幅 --- */
+.page-banner { background-color: #1d1d1f !important; }
+.page-banner h1 { color: #f5f5f7 !important; font-weight: 600 !important; letter-spacing: -.025em !important; }
+.page-banner p { color: #a1a1a6 !important; }
+.inner-tabs { border-bottom: 1px solid rgba(255,255,255,.14) !important; }
+.inner-tabs a { color: #a1a1a6 !important; }
+.inner-tabs a:hover { color: #f5f5f7 !important; }
+.inner-tabs a.active { color: #f5f5f7 !important; }
+.inner-tabs a:after { background: #0071e3 !important; }
+
+/* --- 内容区与卡片 --- */
+.page-content, .is-inner .page-content, .is-home .lead-news { background: #fbfbfd !important; }
+.content-card {
+  background: #ffffff !important;
+  border: 1px solid #e8e8ed !important;
+  border-radius: 18px !important;
+  box-shadow: none !important;
+}
+.card-header { border-bottom: 1px solid #e8e8ed !important; }
+.card-header:before { display: none !important; }
+.card-header h2 { color: #1d1d1f !important; font-weight: 600 !important; letter-spacing: -.022em !important; }
+.card-body { color: #6e6e73 !important; }
+
+.achievement-anchor-nav a {
+  border: 1px solid #e8e8ed !important;
+  border-radius: 980px !important;
+  background: #ffffff !important;
+  color: #6e6e73 !important;
+  box-shadow: none !important;
+}
+.achievement-anchor-nav a:hover, .achievement-anchor-nav a.active {
+  border-color: #0071e3 !important;
+  color: #0071e3 !important;
+  background: rgba(0,113,227,.06) !important;
+}
+
+/* --- 成果列表 --- */
+.ach-toolbar { border-bottom: 1px solid #e8e8ed !important; }
+.ach-search input, .ach-select {
+  border: 1px solid #d2d2d7 !important;
+  border-radius: 980px !important;
+  background-color: #ffffff !important;
+  color: #1d1d1f !important;
+  box-shadow: none !important;
+}
+.ach-select { color: #6e6e73 !important; }
+.ach-search input:focus, .ach-select:focus {
+  border-color: #0071e3 !important;
+  box-shadow: 0 0 0 4px rgba(0,113,227,.15) !important;
+}
+.ach-search i { color: #86868b !important; }
+.ach-count { color: #86868b !important; }
+.ach-count b { color: #1d1d1f !important; }
+
+.ach-year b { color: #1d1d1f !important; font-weight: 600 !important; letter-spacing: -.035em !important; }
+.ach-year span { color: #86868b !important; }
+.ach-year i { background: #e8e8ed !important; }
+
+.ach-item { border-bottom: 1px solid #e8e8ed !important; }
+.ach-title a { color: #1d1d1f !important; letter-spacing: -.022em !important; }
+.ach-title a:hover { color: #0071e3 !important; }
+.ach-meta { color: #86868b !important; font-style: normal !important; }
+.ach-people { color: #6e6e73 !important; }
+.ach-desc { color: #6e6e73 !important; }
+
+.ach-tag {
+  border-radius: 980px !important;
+  background: #f5f5f7 !important;
+  color: #6e6e73 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+}
+.ach-tag.is-direction { background: rgba(0,113,227,.09) !important; color: #0071e3 !important; }
+.ach-tag.is-status { background: rgba(29,122,63,.1) !important; color: #1d7a3f !important; }
+.ach-tag.is-status-pending { background: rgba(160,90,0,.1) !important; color: #a05a00 !important; }
+.ach-tag.is-status-done,
+.ach-tag.is-level,
+.ach-tag.is-type { background: #f5f5f7 !important; color: #6e6e73 !important; }
+
+.ach-media img { border: none !important; border-radius: 14px !important; background: #f5f5f7 !important; }
+
+.ach-link {
+  border: 1px solid #d2d2d7 !important;
+  border-radius: 980px !important;
+  background: transparent !important;
+  color: #0071e3 !important;
+  font-weight: 500 !important;
+}
+.ach-link:hover { background: rgba(0,113,227,.08) !important; border-color: #0071e3 !important; }
+.ach-link.is-code { border-color: #d2d2d7 !important; color: #0071e3 !important; background: transparent !important; }
+.ach-link.is-code:hover { background: rgba(0,113,227,.08) !important; }
+.ach-link.is-more { border-color: #d2d2d7 !important; color: #6e6e73 !important; background: transparent !important; }
+.ach-link.is-more:hover { background: #f5f5f7 !important; }
+
+.ach-empty { color: #86868b !important; }
+
+/* --- 详情页 --- */
+.detail-head { border-bottom: 1px solid #e8e8ed !important; }
+.detail-head h1 { color: #1d1d1f !important; letter-spacing: -.028em !important; }
+.detail-people { color: #6e6e73 !important; }
+.detail-people i, .detail-meta i { color: #86868b !important; }
+.detail-meta { color: #86868b !important; }
+
+.detail-abstract {
+  background: #f5f5f7 !important;
+  border-left: 4px solid #0071e3 !important;
+  border-radius: 0 14px 14px 0 !important;
+}
+.detail-abstract h2 { color: #86868b !important; letter-spacing: .12em !important; }
+.detail-abstract p { color: #1d1d1f !important; }
+
+.detail-cover img { border: none !important; border-radius: 14px !important; }
+
+.detail-body { color: #6e6e73 !important; }
+.detail-body h2, .detail-body h3, .detail-body h4,
+.article-content h2, .article-content h3, .article-content h4 { color: #1d1d1f !important; }
+.detail-body a, .article-content a { color: #0071e3 !important; }
+.article-content blockquote {
+  border-left: 4px solid #d2d2d7 !important;
+  background: #f5f5f7 !important;
+  color: #6e6e73 !important;
+}
+.article-content .article-figure figcaption { color: #86868b !important; }
+
+.detail-links { border-top: 1px solid #e8e8ed !important; border-bottom: 1px solid #e8e8ed !important; }
+
+.detail-related { border-top: 1px solid #e8e8ed !important; }
+.detail-related h2 { color: #1d1d1f !important; }
+.detail-related li { border-bottom: 1px solid #e8e8ed !important; }
+.detail-related a { color: #1d1d1f !important; }
+.detail-related a:hover { color: #0071e3 !important; }
+.detail-related small { color: #86868b !important; }
+.detail-empty { color: #86868b !important; }
+
+.back-btn { border-radius: 980px !important; color: #0071e3 !important; border-color: #d2d2d7 !important; }
+
+/* --- 页脚 --- */
+.main-footer { background: #1d1d1f !important; }
+.main-footer, .main-footer p, .main-footer li, .main-footer a,
+.main-footer span, .main-footer div { color: #a1a1a6 !important; }
+.main-footer strong, .footer-brand strong { color: #f5f5f7 !important; }
+.main-footer a:hover { color: #f5f5f7 !important; }
+.main-footer h4, .footer-grid h4 { color: #f5f5f7 !important; }
+
+.friend-links { background: #f5f5f7 !important; border-top: 1px solid #e8e8ed !important; }
+.friend-links a, .friend-link-list a { color: #6e6e73 !important; }
+.friend-links a:hover, .friend-link-list a:hover { color: #0071e3 !important; }
+
+/* ==========================================================================
+   第三部分 · 成果页与详情页：文字统一纯黑
+   去掉蓝/绿/琥珀三种标签色和蓝色链接，只保留黑白灰。
+   ========================================================================== */
+
+/* --- 列表：所有文字纯黑 --- */
+.achievement-section .card-header h2,
+.achievement-section .ach-count,
+.achievement-section .ach-count b,
+.achievement-section .ach-year b,
+.achievement-section .ach-year span,
+.achievement-section .ach-meta,
+.achievement-section .ach-title a,
+.achievement-section .ach-title a:hover,
+.achievement-section .ach-people,
+.achievement-section .ach-desc,
+.achievement-section .ach-empty,
+.achievement-section .ach-search input,
+.achievement-section .ach-search i,
+.achievement-section .ach-select {
+  color: #000 !important;
+}
+
+/* 输入框占位符保留浅灰，否则和已输入内容分不清 */
+.achievement-section .ach-search input::placeholder { color: #86868b !important; }
+
+/* 标签：去掉彩色，统一浅灰底 + 黑字 */
+.achievement-section .ach-tag,
+.achievement-section .ach-tag.is-direction,
+.achievement-section .ach-tag.is-status,
+.achievement-section .ach-tag.is-status-pending,
+.achievement-section .ach-tag.is-status-done,
+.achievement-section .ach-tag.is-level,
+.achievement-section .ach-tag.is-type {
+  background: #f2f2f2 !important;
+  border: none !important;
+  color: #000 !important;
+}
+
+/* 按钮：黑字 + 中性灰边框，hover 只变底色不变色 */
+.achievement-section .ach-link,
+.achievement-section .ach-link.is-code,
+.achievement-section .ach-link.is-more,
+.achievement-section .ach-link:hover,
+.achievement-section .ach-link.is-code:hover,
+.achievement-section .ach-link.is-more:hover {
+  color: #000 !important;
+  background: transparent !important;
+  border: 1px solid #d2d2d7 !important;
+}
+.achievement-section .ach-link:hover,
+.achievement-section .ach-link.is-code:hover,
+.achievement-section .ach-link.is-more:hover {
+  background: #f2f2f2 !important;
+}
+
+/* 顶部 项目/专利/论文 锚点：黑字，选中态用边框区分 */
+.achievement-anchor-nav a,
+.achievement-anchor-nav a:hover,
+.achievement-anchor-nav a.active {
+  color: #000 !important;
+  background: #ffffff !important;
+  border: 1px solid #d2d2d7 !important;
+  box-shadow: none !important;
+}
+.achievement-anchor-nav a:hover,
+.achievement-anchor-nav a.active {
+  background: #f2f2f2 !important;
+  border-color: #000 !important;
+}
+/* 图标和数字另有自己的颜色（style.css:3320 蓝 / 3470 蓝），一并压掉 */
+.achievement-anchor-nav a i,
+.achievement-anchor-nav a b {
+  color: #000 !important;
+}
+
+/* --- 详情页：同样纯黑 --- */
+.detail-head h1,
+.detail-people,
+.detail-people i,
+.detail-meta,
+.detail-meta i,
+.detail-abstract h2,
+.detail-abstract p,
+.detail-body,
+.detail-body h2,
+.detail-body h3,
+.detail-body h4,
+.detail-related h2,
+.detail-related a,
+.detail-related a:hover,
+.detail-related small,
+.detail-empty,
+.article-content h2,
+.article-content h3,
+.article-content h4,
+.article-content a,
+.article-content a:hover,
+.article-content .article-figure figcaption,
+.article-content blockquote,
+.back-btn,
+.back-btn:hover {
+  color: #000 !important;
+}
+
+/* 摘要框左侧竖条：蓝色 → 黑色 */
+.detail-abstract { border-left-color: #000 !important; }
+
+/* 正文引用块：去掉琥珀色 */
+.article-content blockquote {
+  border-left-color: #d2d2d7 !important;
+  background: #f2f2f2 !important;
+}
+
+/* 详情页上的标签同样去色 */
+.detail-head .ach-tag,
+.detail-head .ach-tag.is-direction,
+.detail-head .ach-tag.is-level,
+.detail-head .ach-tag.is-type {
+  background: #f2f2f2 !important;
+  border: none !important;
+  color: #000 !important;
+}
+
+/* 返回按钮：黑字灰边 */
+.back-btn {
+  border: 1px solid #d2d2d7 !important;
+  background: transparent !important;
+}
+.back-btn:hover { background: #f2f2f2 !important; }
+
+
+
+/* ==========================================================================
+   第四部分 · Apple 字体排版系统
+   问题：全站 17 种字号、行高普遍 2.0–2.2（苹果是 1.15–1.6）、字距散落 -1.2px~2.8px。
+   做法：字号收敛成 7 档阶梯，行高按角色定死，字距统一（标题收紧、正文归零）。
+   ========================================================================== */
+
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+               "SF Pro SC", "PingFang SC", "Hiragino Sans GB",
+               "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC",
+               "Helvetica Neue", Arial, sans-serif;
+
+  --fs-hero: clamp(40px, 4.4vw, 60px);   /* 首页主视觉 */
+  --fs-h1:   clamp(30px, 3vw, 42px);     /* 页面标题 / 详情页标题 */
+  --fs-h2:   28px;                        /* 卡片与分区标题 */
+  --fs-h3:   21px;                        /* 条目标题 */
+  --fs-body: 17px;                        /* 正文 */
+  --fs-small: 14px;                       /* 辅助信息 */
+  --fs-cap:  12px;                        /* 标签 / 角标 */
+
+  --lh-tight: 1.15;   /* h1 */
+  --lh-head:  1.28;   /* h2 */
+  --lh-sub:   1.42;   /* h3 */
+  --lh-body:  1.62;   /* 正文 */
+  --lh-small: 1.5;    /* 辅助信息 */
+}
+
+/* --- 字体族：全站统一系统字栈。排除 Font Awesome 图标字体 --- */
+body, p, div, li, a, td, th, dt, dd, label, blockquote, figcaption, cite, time,
+h1, h2, h3, h4, h5, h6, input, select, textarea, button,
+span:not([class*="fa"]) {
+  font-family: var(--font-sans) !important;
+}
+
+/* --- 正文基线 --- */
+body {
+  font-size: var(--fs-body) !important;
+  line-height: var(--lh-body) !important;
+  letter-spacing: 0 !important;
+}
+p { line-height: var(--lh-body) !important; letter-spacing: 0 !important; }
+
+/* --- 标题：收紧字距，压低行高 --- */
+h1, h2, h3, h4, h5 { letter-spacing: -.022em !important; font-weight: 600 !important; }
+h1 { line-height: var(--lh-tight) !important; }
+h2 { line-height: var(--lh-head) !important; }
+h3 { line-height: var(--lh-sub) !important; }
+h4 { line-height: 1.5 !important; }
+
+/* --- 首页 --- */
+.hero-intro h1 { font-size: var(--fs-hero) !important; line-height: var(--lh-tight) !important; letter-spacing: -.03em !important; }
+.hero-intro p  { font-size: var(--fs-body) !important; line-height: 1.6 !important; letter-spacing: 0 !important; }
+.hero-eyebrow  { letter-spacing: .1em !important; }
+.home-title h2 { font-size: var(--fs-h2) !important; line-height: var(--lh-head) !important; }
+.home-title span { letter-spacing: .1em !important; }
+.ticker-copy h3 { font-size: 16px !important; line-height: 1.5 !important; letter-spacing: -.01em !important; }
+.news-card-copy h3, .home-news-featured h3 { font-size: var(--fs-h3) !important; line-height: 1.4 !important; }
+
+/* --- 页头横幅 --- */
+.page-banner h1 { font-size: var(--fs-h1) !important; line-height: var(--lh-tight) !important; letter-spacing: -.025em !important; }
+.page-banner p  { font-size: var(--fs-body) !important; line-height: 1.55 !important; letter-spacing: 0 !important; }
+.inner-tabs a { font-size: var(--fs-small) !important; letter-spacing: 0 !important; }
+
+/* --- 卡片 --- */
+.card-header h2 { font-size: var(--fs-h2) !important; line-height: var(--lh-head) !important; letter-spacing: -.022em !important; }
+.card-body { font-size: var(--fs-body) !important; line-height: var(--lh-body) !important; letter-spacing: 0 !important; }
+.card-body > p { line-height: var(--lh-body) !important; }
+
+/* --- 成果列表 --- */
+.ach-year b { font-size: 30px !important; line-height: 1.1 !important; letter-spacing: -.035em !important; font-weight: 600 !important; }
+.ach-year span, .ach-count { font-size: var(--fs-small) !important; line-height: var(--lh-small) !important; letter-spacing: 0 !important; }
+.ach-title { font-size: 25px !important; line-height: 1.35 !important; letter-spacing: -.022em !important; }
+.ach-desc { font-size: 15px !important; line-height: 1.65 !important; letter-spacing: 0 !important; }
+.ach-people, .ach-meta { font-size: var(--fs-small) !important; line-height: var(--lh-small) !important; letter-spacing: 0 !important; }
+.ach-tag { font-size: var(--fs-cap) !important; line-height: 1.5 !important; letter-spacing: 0 !important; }
+.ach-link { font-size: 13px !important; line-height: 1.5 !important; letter-spacing: 0 !important; }
+.ach-search input, .ach-select { font-size: var(--fs-small) !important; letter-spacing: 0 !important; }
+.achievement-anchor-nav a { font-size: var(--fs-small) !important; letter-spacing: 0 !important; }
+
+/* --- 详情页 --- */
+.detail-head h1 { font-size: var(--fs-h1) !important; line-height: 1.18 !important; letter-spacing: -.028em !important; }
+.detail-people { font-size: var(--fs-body) !important; line-height: 1.55 !important; letter-spacing: 0 !important; }
+.detail-meta { font-size: var(--fs-small) !important; line-height: var(--lh-small) !important; letter-spacing: 0 !important; }
+.detail-abstract h2 { font-size: var(--fs-cap) !important; line-height: 1.5 !important; letter-spacing: .1em !important; }
+.detail-abstract p { font-size: var(--fs-body) !important; line-height: 1.72 !important; letter-spacing: 0 !important; }
+.article-content { font-size: var(--fs-body) !important; line-height: var(--lh-body) !important; letter-spacing: 0 !important; }
+.article-content p { font-size: var(--fs-body) !important; line-height: 1.72 !important; letter-spacing: 0 !important; }
+.article-content h2 { font-size: 25px !important; line-height: 1.3 !important; letter-spacing: -.022em !important; }
+.article-content h3 { font-size: var(--fs-h3) !important; line-height: 1.35 !important; letter-spacing: -.02em !important; }
+.article-content li { font-size: var(--fs-body) !important; line-height: 1.72 !important; }
+.detail-related h2 { font-size: var(--fs-h4, 17px) !important; line-height: 1.4 !important; }
+.detail-related a { font-size: 16px !important; line-height: 1.45 !important; letter-spacing: -.01em !important; }
+.detail-related small { font-size: 13px !important; line-height: 1.5 !important; letter-spacing: 0 !important; }
+
+/* --- 关于页 / 团队页 / 平台页 --- */
+.leader-copy h3, .people-card h3, .platform-card h3 { font-size: var(--fs-h3) !important; line-height: 1.35 !important; }
+.leader-copy h3 { font-size: 24px !important; }
+.leader-bio, .leader-copy p { font-size: var(--fs-body) !important; line-height: var(--lh-body) !important; letter-spacing: 0 !important; }
+.history-year { font-size: 30px !important; line-height: 1.2 !important; font-weight: 600 !important; letter-spacing: -.03em !important; }
+.history-copy h4 { font-size: var(--fs-h4, 17px) !important; line-height: 1.5 !important; }
+.history-copy p { font-size: 15px !important; line-height: 1.65 !important; letter-spacing: 0 !important; }
+.goal-item h3 { font-size: var(--fs-h4, 17px) !important; line-height: 1.45 !important; }
+.goal-item p { font-size: 15px !important; line-height: 1.65 !important; letter-spacing: 0 !important; }
+.contact-item h4 { font-size: 13px !important; line-height: 1.4 !important; letter-spacing: .02em !important; }
+.contact-item p { font-size: var(--fs-small) !important; line-height: 1.55 !important; letter-spacing: 0 !important; }
+
+/* --- 页脚 --- */
+.main-footer { font-size: var(--fs-small) !important; line-height: 1.6 !important; letter-spacing: 0 !important; }
+.main-footer h4, .footer-grid h4 { font-size: var(--fs-small) !important; line-height: 1.4 !important; letter-spacing: .02em !important; }
+.main-footer p, .main-footer li, .main-footer a { font-size: var(--fs-small) !important; line-height: 1.65 !important; letter-spacing: 0 !important; }
+.friend-links a, .friend-link-list a { font-size: 13px !important; letter-spacing: 0 !important; }
+
+/* --- 补掉漏网的旧颜色 --- */
+.article-content p { color: #1d1d1f !important; }
+.history-year { color: #1d1d1f !important; }
+.contact-item p { color: #6e6e73 !important; }
+.article-content blockquote { color: #6e6e73 !important; }
+
+/* ==========================================================================
+   第五部分 · 细节调整
+   ========================================================================== */
+
+/* --- 1. 首页 hero 按钮放大（原来是 14px / padding 11px 21px，偏小）--- */
+.hero-actions a {
+  font-size: 22px !important;
+  padding: 16px 32px !important;
+  gap: 44px !important;
+  border-radius: 6px !important;
+  letter-spacing: -.01em !important;
+  min-width: 260px !important;
+}
+.hero-actions a span {
+  font-size: 26px !important;
+  line-height: 1 !important;
+  transition: transform .25s ease;
+}
+.hero-actions a:hover span { transform: translateX(4px); }
+.hero-actions a:first-child:hover span { transform: translate(3px, -3px); }
+
+/* --- 2. 导航栏：半透明（最终值见第八部分第 7 条）---
+   这里只保留文字投影。backdrop-filter 已移除：
+   .nav-dropdown 是它的子元素，父级一旦有 backdrop-filter 会把背景"压平"，
+   导致下拉菜单自己的 backdrop-filter 失效（Chrome 的已知行为）。 */
+.brand-copy strong,
+.main-nav li > a,
+.header-search input::placeholder {
+  text-shadow: 0 1px 4px rgba(0,0,0,.45);
+}
+
+/* --- 3. 详情页返回按钮：溢出 + 没跟上面的「相关论文/项目」对齐 ---
+   来源：style.css:2389 .is-inner .card-footer { padding: 24px 0 }
+   左右没有内边距 → 按钮贴在卡片边框上（left=101），比正文轨道（133）靠左 32px。
+   另外 .back-btn 自己 padding:0，加了边框后文字贴着边框，看着像溢出。 */
+.is-inner .card-footer {
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+}
+.back-btn {
+  padding: 9px 20px !important;
+  gap: 9px !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+
+/* ==========================================================================
+   第六部分 · 内容卡片改半透明玻璃
+   前提：卡片要"透"，底下必须有点东西可透。
+   原来页面底色 #fbfbfd、卡片 #fff，几乎一样，直接加透明度看不出来。
+   所以先把页面底色压到 Apple 的 #f5f5f7，卡片再用半透明白 + 毛玻璃。
+   ========================================================================== */
+
+body,
+.page-content,
+.is-inner .page-content,
+.is-home .lead-news {
+  background: #f5f5f7 !important;
+}
+
+.content-card {
+  background: rgba(255, 255, 255, .72) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, .06) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .04) !important;
+}
+
+/* 卡片内部的分隔线跟着调淡，否则在半透明底上显得突兀 */
+.card-header { border-bottom-color: rgba(0, 0, 0, .07) !important; }
+.is-inner .card-footer { border-top-color: rgba(0, 0, 0, .07) !important; }
+.ach-item { border-bottom-color: rgba(0, 0, 0, .07) !important; }
+.detail-head, .detail-related, .detail-links {
+  border-color: rgba(0, 0, 0, .08) !important;
+}
+
+/* 卡片内的浅色块改成半透明，避免出现"实心块浮在玻璃上"的断层 */
+.detail-abstract { background: rgba(0, 0, 0, .035) !important; }
+.ach-tag { background: rgba(0, 0, 0, .055) !important; }
+.ach-search input, .ach-select,
+.achievement-anchor-nav a {
+  background-color: rgba(255, 255, 255, .75) !important;
+}
+.ach-search input:focus, .ach-select:focus { background-color: #ffffff !important; }
+.ach-link:hover, .ach-link.is-more:hover, .achievement-anchor-nav a:hover { background: rgba(0, 0, 0, .05) !important; }
+
+/* ==========================================================================
+   第七部分 · 清理全站残留的旧蓝旧灰
+   用脚本扫了 21 个路由，发现还有 25 种老配色没被覆盖：
+   旧蓝 #0a4c91 / #0a5da8 / #083f82 / #173f70 / #23405f，旧灰 #8b95a1 / #4a5a6c /
+   #5c6875 / #64716f / #7a8592 / #7b8794 / #667586 / #68737f 等，还有几处浅蓝底。
+   统一归并到 Apple 三级灰 + 唯一蓝。
+   ========================================================================== */
+
+/* --- 标题对齐：通知页的「全部通知」被 style.css:2375 居中了 --- */
+.is-inner .card-header h2 { text-align: left !important; }
+
+/* --- 团队页 --- */
+.people-card-title { background: #0071e3 !important; }
+.people-card-research { color: #6e6e73 !important; }
+.people-card b, .people-card strong { color: #1d1d1f !important; }
+.people-card p, .people-card span { color: #6e6e73 !important; }
+.people-card small, .people-card time { color: #86868b !important; }
+.people-card .fas, .people-card .far { background: #f5f5f7 !important; }
+.student-status { background: #1d7a3f !important; }
+
+/* --- 校友页 --- */
+.alumni-card-level { color: #86868b !important; }
+.alumni-card-destination { background: #1d7a3f !important; }
+.alumni-card-photo { background-color: #f5f5f7 !important; }
+.alumni-card b, .alumni-card strong { color: #1d1d1f !important; }
+.alumni-card p, .alumni-card span { color: #6e6e73 !important; }
+.alumni-card small { color: #86868b !important; }
+
+/* --- 关于页负责人 --- */
+.leader-area, .leader-bio { color: #6e6e73 !important; }
+.leader-copy b, .leader-copy strong { color: #1d1d1f !important; }
+.leader-copy p, .leader-copy span { color: #6e6e73 !important; }
+.leader-copy small { color: #86868b !important; }
+
+/* --- 下载页 --- */
+.dataset-card-desc { color: #6e6e73 !important; }
+.dataset-card b, .dataset-card strong { color: #1d1d1f !important; }
+.dataset-card p, .dataset-card span { color: #6e6e73 !important; }
+.dataset-card small { color: #86868b !important; }
+.dataset-card .fas, .dataset-card .far { background: #f5f5f7 !important; }
+.dataset-btn.is-ghost {
+  background: transparent !important;
+  color: #0071e3 !important;
+  border: 1px solid #d2d2d7 !important;
+}
+
+/* --- 平台页 --- */
+/* 注意：这里只能用 background-color。用 background 简写 + !important 会把
+   模板里的内联 background-image:url(...) 一起覆盖掉（内联样式输给 !important），
+   平台卡片的配图就会全部消失。 */
+.platform-card-photo { background-color: #f5f5f7 !important; }
+.platform-card b, .platform-card strong { color: #1d1d1f !important; }
+.platform-card p, .platform-card span { color: #6e6e73 !important; }
+.platform-card small { color: #86868b !important; }
+
+/* --- 通知页 --- */
+.notice-tag { background: #0071e3 !important; }
+.notice-date { color: #86868b !important; }
+
+/* --- 零散的 em 角标 / 灰色按钮底 --- */
+.people-card em, .alumni-card em, .dataset-card em, .platform-card em {
+  background: #0071e3 !important;
+  color: #ffffff !important;
+}
+
+/* --- 第七部分补遗：按父容器路径精确定位剩下的匿名元素 --- */
+
+/* 团队页 */
+.team-directory-intro > div > span,
+.people-section-heading span,
+.people-section-heading > div > span { color: #0071e3 !important; }
+.team-directory-intro > div > p,
+.team-directory-stats span,
+.people-tools > p { color: #86868b !important; }
+.people-section-heading > p { color: #86868b !important; }
+.people-type-nav a .fas { background: #f5f5f7 !important; }
+.people-search-box button { background: #f5f5f7 !important; }
+.people-card a span b { color: #1d1d1f !important; }
+.people-card a span small { color: #86868b !important; }
+
+/* 校友页 */
+.alumni-destination-group h3 small { color: #86868b !important; }
+.alumni-card-destination { color: #ffffff !important; }
+
+/* 关于页 */
+.leader-btn, .leader-btn.is-ghost {
+  background: #0071e3 !important;
+  color: #ffffff !important;
+  border-color: #0071e3 !important;
+}
+.leader-btn.is-ghost {
+  background: transparent !important;
+  color: #0071e3 !important;
+  border-color: #d2d2d7 !important;
+}
+.leader-side-item b, .leader-side-copy b { color: #1d1d1f !important; }
+.goal-item p, .history-copy p { color: #6e6e73 !important; }
+
+/* 下载页 */
+.textbook-card p { color: #6e6e73 !important; }
+
+/* 通知页 */
+.notice-page-item time b { color: #1d1d1f !important; }
+.notice-page-item time span { color: #86868b !important; }
+.notice-page-copy strong { color: #1d1d1f !important; }
+.notice-page-copy small { color: #86868b !important; }
+
+/* --- 第七部分收尾：最后 6 处 --- */
+.team-directory-stats span b,
+.people-type-nav a span b,
+.people-tools p b { color: #1d1d1f !important; }
+.people-type-nav a span small,
+.leader-side-copy small,
+.search-empty-card p { color: #86868b !important; }
+
+/* 搜索页主按钮 → Apple 蓝 */
+.search-page-form button {
+  background: #0071e3 !important;
+  color: #ffffff !important;
+  border-color: #0071e3 !important;
+  border-radius: 6px !important;
+}
+.search-page-form button:hover { background: #0077ed !important; }
+.search-page-form input { border-radius: 6px !important; }
+
+/* 修正：.people-card-title 是蓝底白字的角标，
+   被上面 .people-card span 的灰字规则误伤了（对比度 1.08，几乎看不见） */
+.people-card-title { color: #ffffff !important; }
+.student-status { color: #ffffff !important; }
+
+/* 上面这条被 .people-card span（0,1,1）盖过了，.people-card-title 只有 (0,1,0)。
+   提高权重到 (0,2,0) 才生效。 */
+.people-card .people-card-title,
+.people-card .student-status,
+.alumni-card .alumni-card-destination {
+  color: #ffffff !important;
+}
+
+/* 统计区的标签被 .team-directory-intro > div > span（0,2,1）盖成蓝的了，
+   数字应该是深色主体、标签应该是弱化的灰。提高权重修正。 */
+.team-directory-intro .team-directory-stats span { color: #86868b !important; }
+.team-directory-intro .team-directory-stats span b { color: #1d1d1f !important; }
+
+/* ==========================================================================
+   第八部分 · 圆角统一 + 导航强化
+   ========================================================================== */
+
+/* --- 1. 卡片裁切：card-header / card-footer 是不透明白底，
+       在圆角卡片里会顶出直角，加 overflow:hidden 让它们跟着卡片裁 --- */
+.content-card { overflow: hidden !important; }
+
+/* --- 2. 全站卡片容器统一 18px 圆角 --- */
+.content-card,
+.people-card, .alumni-card, .alumni-destination-card,
+.platform-card, .dataset-card, .textbook-card,
+.news-card, .social-card, .home-news-featured,
+.team-directory-intro, .people-tools, .search-empty-card {
+  border-radius: 18px !important;
+  overflow: hidden !important;
+}
+
+/* --- 3. 卡片内的图片跟着卡片裁切 --- */
+.people-card-photo, .alumni-card-photo, .platform-card-photo,
+.news-card-image, .social-card-photo, .ticker-thumb,
+.leader-photo, .textbook-card-cover, .dataset-card-cover {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+.people-card img, .alumni-card img, .platform-card img, .leader-photo img,
+.dataset-card img, .textbook-card img, .news-card img, .social-card img {
+  border-radius: 12px !important;
+}
+
+/* --- 4. 零散的小方块 / 角标全部改胶囊或圆角 --- */
+.people-card-title,
+.student-status,
+.alumni-card-destination,
+.people-card em, .alumni-card em, .dataset-card em, .platform-card em,
+.dataset-btn, .dataset-btn.is-ghost,
+.leader-btn, .leader-btn.is-ghost {
+  border-radius: 980px !important;
+}
+.people-search-box,
+.people-search-box input,
+.search-page-form input,
+.search-page-form button { border-radius: 980px !important; }
+.people-search-box button { border-radius: 50% !important; }
+.fas.fa-wave-square, .far.fa-wave-square { border-radius: 10px !important; }
+
+/* --- 5. 下拉弹层圆角（Chrome 135+ 的 appearance: base-select）--- */
+@supports (appearance: base-select) {
+  select.ach-select {
+    appearance: base-select;
+  }
+  select.ach-select::picker-icon { display: none; }
+  select.ach-select::picker(select) {
+    appearance: base-select;
+    margin-top: 6px;
+    padding: 6px;
+    border: 1px solid #d2d2d7;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .16);
+  }
+  select.ach-select option {
+    padding: 9px 14px;
+    border-radius: 9px;
+    color: #1d1d1f;
+    font-size: 15px;
+  }
+  select.ach-select option:hover { background: #f5f5f7; }
+  select.ach-select option:checked { background: #0071e3; color: #ffffff; }
+}
+
+/* --- 6. 导航：字体加大加粗 --- */
+.main-nav li > a {
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  letter-spacing: -.012em !important;
+}
+/* 窄屏收回去，否则会撑出横向滚动条 */
+@media (max-width: 900px) {
+  .main-nav li > a { font-size: 16px !important; }
+}
+
+/* --- 7. 导航再透一档：透明度拉到 90%（即只剩 10% 着色）---
+   注意：这里不能加 backdrop-filter。.nav-dropdown 是它的子元素，
+   父级一旦有 backdrop-filter 就会把背景"压平"，导致子元素自己的
+   backdrop-filter 失效（Chrome 的已知行为）。导航的透感靠渐变就够。 */
+.site-header {
+  background: linear-gradient(180deg,
+    rgba(12,12,14,.12) 0%,
+    rgba(12,12,14,.07) 62%,
+    rgba(12,12,14,0) 100%) !important;
+}
+
+/* --- 8. 导航下拉菜单：深色半透明玻璃 ---
+   试过的三档：
+     .12 → 背景几乎全透，但白字在亮背景上完全读不出来
+     .80 白 → 读得清，但用户不要白色
+     .58 → 深色半透明：读得清但偏实
+     .45 → 再透一档
+     .10 → 当前值（用户指定 90% 透明），可读性靠重投影硬撑
+   另外注意：backdrop-filter 在 .site-header 这个嵌套位置不可靠渲染，
+   所以可读性主要靠 .58 这个底色本身，不能指望模糊。 */
+.nav-dropdown {
+  background: rgba(12,12,14,.10) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  border-radius: 16px !important;
+  /* 三层阴影：贴边描形 + 中距立体 + 远距悬浮 */
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.20),
+    0 10px 24px rgba(0,0,0,.26),
+    0 24px 56px rgba(0,0,0,.24) !important;
+  overflow: hidden !important;
+  width: auto !important;
+  min-width: 200px !important;
+  padding: 8px 0 !important;
+}
+/* 注意：style.css:2457 是 .main-nav .nav-dropdown a（0,2,1）且带 !important，
+   只写 .nav-dropdown a（0,1,1）压不住，必须用同权重选择器靠"排在后面"取胜。 */
+.main-nav .nav-dropdown a {
+  color: #f5f5f7 !important;
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  letter-spacing: -.01em !important;
+  padding: 13px 20px !important;
+  text-shadow: 0 0 12px rgba(0,0,0,.92), 0 0 4px rgba(0,0,0,.85), 0 1px 2px rgba(0,0,0,.8) !important;
+}
+/* 悬停原本是琥珀色 #f0b000（style.css:2467），跟这套配色不搭 */
+.main-nav .nav-dropdown a:hover {
+  color: #ffffff !important;
+  background: rgba(255,255,255,.14) !important;
+}
+/* 导航文字压到接近全透的背景上，投影要加重才读得清 */
+.main-nav li > a,
+.brand-copy strong { text-shadow: 0 1px 6px rgba(0,0,0,.65) !important; }
+
+/* --- 补：还差两处图片圆角 --- */
+.leader-side-item img { border-radius: 10px !important; }
+.member-profile-photo, .member-profile-photo img {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+}
+
+/* ==========================================================================
+   第九部分 · 溢出修正 + 卡片阴影 + 首页密度
+   ========================================================================== */
+
+/* --- 1. 成员卡片的职务标签：原来被我做成了"整行通栏蓝底"，
+       看着像溢出卡片。改成贴着文字宽度的胶囊。
+       （实测它并没有超出卡片：标题 120~377 在父容器 101~396 内，
+        纯粹是通栏造成的错觉。）--- */
+.people-card .people-card-title {
+  /* 父容器 .people-card-copy 是 flex 列，子元素会被块级化撑满整行，
+     所以光写 inline-block 没用，必须加 fit-content + align-self 才收得住。 */
+  display: inline-block !important;
+  width: fit-content !important;
+  align-self: flex-start !important;
+  margin-right: auto !important;
+  padding: 4px 12px !important;
+  border-radius: 980px !important;
+  background: #0071e3 !important;
+  color: #ffffff !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  font-weight: 600 !important;
+}
+
+/* --- 2. 全站卡片加阴影，做出层次 --- */
+.content-card,
+.people-card, .alumni-card, .alumni-destination-card,
+.platform-card, .dataset-card, .textbook-card,
+.news-card, .social-card, .home-news-featured,
+.team-directory-intro, .people-tools, .search-empty-card,
+.home-news-ticker-wrap, .leader-side-item {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, .06),
+    0 8px 24px rgba(0, 0, 0, .08) !important;
+}
+/* 悬停再抬一档 */
+.people-card:hover, .alumni-card:hover, .alumni-destination-card:hover,
+.platform-card:hover, .dataset-card:hover, .textbook-card:hover,
+.news-card:hover, .social-card:hover, .home-news-featured:hover,
+.leader-side-item:hover {
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, .09),
+    0 16px 40px rgba(0, 0, 0, .13) !important;
+}
+
+/* --- 3. 首页：压掉留白，让首屏露出更多内容 ---
+   原来 hero 固定 690px（900px 视口占 77%），且 .hero-intro 上内边距 267px，
+   按钮下方还空一大片。改成随视口高度自适应，并把内边距和分区间距收紧。 */
+.is-home .hero {
+  height: clamp(480px, 64vh, 640px) !important;
+}
+.hero-intro {
+  padding-top: clamp(168px, 22vh, 210px) !important;
+}
+.is-home .lead-news { padding: 48px 0 52px !important; }
+.is-home .lead-news .home-title { padding-bottom: 16px !important; margin-bottom: 22px !important; }
+.is-home .home-social-section { padding: 48px 0 52px !important; }
+.is-home .home-news-ticker { height: 430px !important; }
+.is-home .home-news-featured .news-card-image { height: 250px !important; }
+
+/* ==========================================================================
+   第十部分 · 统一的悬停交互（参考 Apple 的卡片动效语言）
+   Apple 的四条原则：
+     ① 位移克制：只抬 3px，不弹跳
+     ② 深度靠阴影：位移小、阴影明显变软变宽
+     ③ 图片在卡片内轻微放大（被 overflow 裁切），不放大卡片本身
+     ④ 悬停不改文字颜色，只让箭头/按钮给反馈
+   原来站内 -3 ~ -6px 各写各的、缓动不统一、还会变文字颜色，这里全部收敛。
+   ========================================================================== */
+
+:root {
+  --ap-ease: cubic-bezier(.28, .11, .32, 1);      /* Apple 常用缓动 */
+  --ap-ease-soft: cubic-bezier(.4, 0, .2, 1);
+  --ap-dur: .34s;
+  --ap-dur-slow: .52s;
+}
+
+/* --- 1. 卡片：统一过渡，悬停抬 3px + 阴影加深 --- */
+.people-card, .alumni-card, .alumni-destination-card,
+.platform-card, .dataset-card, .textbook-card,
+.news-card, .social-card, .home-news-featured,
+.team-card, .research-card, .leader-side-item,
+.achievement-anchor-nav a, .people-type-nav a {
+  transition:
+    transform var(--ap-dur) var(--ap-ease),
+    box-shadow var(--ap-dur) var(--ap-ease),
+    border-color var(--ap-dur) var(--ap-ease),
+    background-color var(--ap-dur) var(--ap-ease) !important;
+}
+
+.people-card:hover, .alumni-card:hover, .alumni-destination-card:hover,
+.platform-card:hover, .dataset-card:hover, .textbook-card:hover,
+.news-card:hover, .social-card:hover, .home-news-featured:hover,
+.team-card:hover, .research-card:hover, .leader-side-item:hover {
+  transform: translateY(-3px) !important;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, .08),
+    0 14px 34px rgba(0, 0, 0, .12) !important;
+  border-color: #d2d2d7 !important;
+  /* 悬停不改文字颜色（原来 .people-card 会变蓝、.news-card 会变黑） */
+  color: #1d1d1f !important;
+}
+
+/* --- 2. 卡片内的图片：轻微放大，被卡片的 overflow 裁掉 --- */
+.people-card-photo img,
+.alumni-card-photo img,
+.leader-photo img,
+.news-card-image,
+.social-card-photo,
+.platform-card-photo,
+.alumni-card-photo,
+.ticker-thumb,
+.dataset-card-cover,
+.textbook-card-cover,
+.ach-media img,
+.member-profile-photo img {
+  transition: transform var(--ap-dur-slow) var(--ap-ease) !important;
+  transform-origin: center;
+}
+.people-card:hover .people-card-photo img,
+.alumni-card:hover .alumni-card-photo img,
+.news-card:hover .news-card-image,
+.social-card:hover .social-card-photo,
+.platform-card:hover .platform-card-photo,
+.alumni-card:hover .alumni-card-photo,
+.dataset-card:hover .dataset-card-cover,
+.textbook-card:hover .textbook-card-cover,
+.ach-item:hover .ach-media img,
+.member-profile-photo:hover img {
+  transform: scale(1.045) !important;
+}
+
+/* --- 3. 箭头：悬停右移 4px（Apple 的 "learn more →" 标准做法）--- */
+.people-card i[aria-hidden="true"],
+.alumni-card i[aria-hidden="true"],
+.news-card i[aria-hidden="true"],
+.dataset-card i[aria-hidden="true"],
+.leader-btn i,
+.hero-actions a i,
+.hero-actions a span {
+  transition: transform var(--ap-dur) var(--ap-ease) !important;
+}
+.people-card:hover i[aria-hidden="true"],
+.alumni-card:hover i[aria-hidden="true"],
+.news-card:hover i[aria-hidden="true"],
+.dataset-card:hover i[aria-hidden="true"],
+.leader-btn:hover i { transform: translateX(4px) !important; }
+
+/* --- 4. 按下回缩：Apple 的按钮都有这个反馈 --- */
+.ach-link:active, .back-btn:active, .leader-btn:active,
+.hero-actions a:active, .search-page-form button:active,
+.achievement-anchor-nav a:active, .people-type-nav a:active,
+.dataset-btn:active, .people-search-box button:active {
+  transform: scale(.97) !important;
+}
+.ach-link, .back-btn, .leader-btn, .hero-actions a,
+.search-page-form button, .dataset-btn, .people-search-box button {
+  transition: transform .12s var(--ap-ease-soft),
+              background-color var(--ap-dur) var(--ap-ease),
+              border-color var(--ap-dur) var(--ap-ease),
+              color var(--ap-dur) var(--ap-ease) !important;
+}
+
+/* --- 5. 列表行：不抬升，只给一点底色（避免整页都在动）--- */
+.ach-item, .notice-page-item, .notice-item, .detail-item {
+  transition: background-color var(--ap-dur) var(--ap-ease) !important;
+}
+.ach-item:hover { background-color: rgba(0, 0, 0, .015) !important; }
+
+/* --- 6. 尊重系统的"减少动态效果"设置 --- */
+@media (prefers-reduced-motion: reduce) {
+  .people-card, .alumni-card, .alumni-destination-card,
+  .platform-card, .dataset-card, .textbook-card,
+  .news-card, .social-card, .home-news-featured,
+  .team-card, .research-card, .leader-side-item {
+    transition: none !important;
+  }
+  .people-card:hover, .alumni-card:hover, .alumni-destination-card:hover,
+  .platform-card:hover, .dataset-card:hover, .textbook-card:hover,
+  .news-card:hover, .social-card:hover, .home-news-featured:hover,
+  .team-card:hover, .research-card:hover, .leader-side-item:hover {
+    transform: none !important;
+  }
+  .people-card:hover .people-card-photo img,
+  .news-card:hover .news-card-image,
+  .platform-card:hover .platform-card-photo,
+  .social-card:hover .social-card-photo { transform: none !important; }
+}
