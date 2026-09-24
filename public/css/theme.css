@@ -1194,3 +1194,17 @@ body,
   color: #1d1d1f !important;
   border-color: transparent !important;
 }
+
+/* 手机端菜单展开时，页面 banner 里的「教师/在读学生/毕业学生去向」标签
+   （.inner-tabs，z-index:4）会画在菜单上面 —— header 虽然 z-index:100，
+   但层叠上下文被中途截断，实际压不住。直接把窄屏 header 拉到最高层。 */
+@media (max-width: 900px) {
+  .site-header {
+    z-index: 9000 !important;
+  }
+  .main-nav.active {
+    position: relative !important;
+    z-index: 9001 !important;
+    isolation: isolate;
+  }
+}
