@@ -1226,3 +1226,29 @@ body,
   background: rgba(12, 12, 14, .62) !important;
   border-color: rgba(255, 255, 255, .75) !important;
 }
+
+/* --- hero 按钮在窄屏改为并排 ---
+   桌面端是两个大按钮（22px 字、260px 宽）上下堆叠，手机屏放不下这么宽，
+   每个各占一行、还容易压在照片亮部。窄屏改成两栏等宽并排，字号和内边距收小。 */
+@media (max-width: 900px) {
+  .hero-actions {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+  .hero-actions a {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    font-size: 15px !important;
+    padding: 12px 14px !important;
+    gap: 8px !important;
+    border-radius: 5px !important;
+    white-space: nowrap !important;
+  }
+  .hero-actions a span { font-size: 17px !important; }
+}
+@media (max-width: 400px) {
+  .hero-actions a { font-size: 14px !important; padding: 11px 10px !important; gap: 6px !important; }
+  .hero-actions a span { font-size: 15px !important; }
+}
