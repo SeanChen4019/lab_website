@@ -1153,3 +1153,44 @@ body,
   .platform-card:hover .platform-card-photo,
   .social-card:hover .social-card-photo { transform: none !important; }
 }
+
+/* ==========================================================================
+   第十一部分 · 手机端导航
+   桌面端 header 有 166px 高，12% 透明还能靠投影撑住；
+   手机端 header 只有 90px，同样透明度下文字直接压在照片亮部，读起来吃力。
+   所以窄屏单独加深一档。
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .site-header {
+    background: linear-gradient(180deg,
+      rgba(12,12,14,.74) 0%,
+      rgba(12,12,14,.64) 68%,
+      rgba(12,12,14,.52) 100%) !important;
+  }
+  /* 底变深了，投影可以轻一点，避免字发毛 */
+  .brand-copy strong,
+  .main-nav li > a,
+  .header-search input::placeholder {
+    text-shadow: 0 1px 3px rgba(0,0,0,.4) !important;
+  }
+}
+
+/* 展开的汉堡菜单面板原来是深海军蓝 #102d46（refinement.css:91），跟这套配色不搭 */
+.main-nav.active {
+  background: #1d1d1f !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+}
+
+/* 手机菜单里的搜索框：原来是深海军蓝底 #062f62（style.css:3002）+ 蓝色图标，
+   跟现在近黑的菜单面板不搭，改成一层极淡的白 */
+.main-nav li.mobile-nav-search {
+  background: rgba(255,255,255,.06) !important;
+}
+.mobile-nav-search button { color: #6e6e73 !important; }
+.mobile-nav-search .site-search-form input {
+  background: #ffffff !important;
+  color: #1d1d1f !important;
+  border-color: transparent !important;
+}
