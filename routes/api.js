@@ -326,11 +326,11 @@ router.get('/banners', authMiddleware, async (req, res) => {
 router.post('/banners', authMiddleware, validateLengths(['title']), async (req, res) => {
   try {
     const { title, image_url, link_url, sort_order, is_active = 1 } = req.body;
-    await db.run(
+    const result = await db.run(
       'INSERT INTO banners (title, image_url, link_url, sort_order, is_active) VALUES (?, ?, ?, ?, ?)',
       [title, image_url, link_url || '', sort_order || 0, is_active]
     );
-    res.json({ success: true, message: '添加成功' });
+    res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/' });
   } catch (error) {
     res.status(500).json({ success: false, message: '添加失败' });
   }
@@ -627,7 +627,7 @@ router.post('/alumni', authMiddleware, validateLengths(['name', 'major', 'destin
     if (!['undergraduate', 'master', 'doctor'].includes(degree_level)) {
       return res.status(400).json({ success: false, message: '请选择正确的培养层次' });
     }
-    await db.run(
+    const result = await db.run(
       `INSERT INTO alumni
        (name, degree_level, graduation_year, major, destination_type, destination, position, photo_url, note, sort_order, is_active)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -637,7 +637,7 @@ router.post('/alumni', authMiddleware, validateLengths(['name', 'major', 'destin
         photo_url || '', note || '', sort_order || 0, is_active
       ]
     );
-    res.json({ success: true, message: '毕业生信息添加成功' });
+    res.status(201).json({ success: true, message: '毕业生信息添加成功', id: result.lastID, url: '/alumni' });
   } catch (error) {
     res.status(500).json({ success: false, message: '添加毕业生信息失败' });
   }
@@ -684,7 +684,10 @@ router.delete('/alumni/:id', authMiddleware, async (req, res) => {
 router.get('/research-areas', authMiddleware, async (req, res) => {
   try {
     const areas = await db.all('SELECT * FROM research_areas ORDER BY sort_order ASC');
-    res.json({ success: true, areas });
+    // researchAreas 是规范名（其余 11 个列表接口都用资源名复数）；
+    // areas 是历史名，保留是因为 public/js/admin-visual.js 没走 assetUrl 缓存失效，
+    // 已缓存旧脚本的浏览器还在用它。两者指向同一个数组。
+    res.json({ success: true, areas, researchAreas: areas });
   } catch (error) {
     res.status(500).json({ success: false, message: '获取失败' });
   }
@@ -693,11 +696,11 @@ router.get('/research-areas', authMiddleware, async (req, res) => {
 router.post('/research-areas', authMiddleware, validateLengths(['title', 'description']), async (req, res) => {
   try {
     const { title, description, icon, sort_order, is_active = 1 } = req.body;
-    await db.run(
+    const result = await db.run(
       'INSERT INTO research_areas (title, description, icon, sort_order, is_active) VALUES (?, ?, ?, ?, ?)',
       [title, description, icon || '', sort_order || 0, is_active]
     );
-    res.json({ success: true, message: '添加成功' });
+    res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/research' });
   } catch (error) {
     res.status(500).json({ success: false, message: '添加失败' });
   }
@@ -795,11 +798,11 @@ router.post('/downloads', authMiddleware, validateLengths(['title', 'description
     if (checkedTitle.error) return res.status(400).json({ success: false, message: checkedTitle.error });
     const checkedFile = normalizeUrl(file_url);
     if (!checkedFile) return res.status(400).json({ success: false, message: '请上传文件或填写正确的文件地址' });
-    await db.run(
+    const result = await db.run(
       'INSERT INTO downloads (title, description, file_url, file_size, category, is_active) VALUES (?, ?, ?, ?, ?, ?)',
       [checkedTitle.value, description || '', checkedFile, file_size || '', category || '其他', normalizeFlag(is_active, 1)]
     );
-    res.json({ success: true, message: '添加成功' });
+    res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/downloads' });
   } catch (error) {
     res.status(500).json({ success: false, message: '添加失败' });
   }
