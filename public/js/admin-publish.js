@@ -16,7 +16,7 @@
   const errorBox = document.getElementById('publishError');
   const draftState = document.getElementById('publishDraftState');
   const successPanel = document.getElementById('publishSuccess');
-  const draftKey = 'lab-easy-publish-draft';
+  const draftKey = 'lab-easy-publish-draft-' + (JSON.parse(localStorage.getItem('user') || '{}').id || 'unknown');
   let draftTimer = null;
 
   dateInput.value = new Date().toISOString().slice(0, 10);

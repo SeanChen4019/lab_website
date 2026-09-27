@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %> - 电磁频谱认知智能通信实验室</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="<%= assetUrl('/css/admin.css') %>">
 </head>
 <body>
   <div class="admin-layout">
@@ -124,7 +124,7 @@
     </div>
   </div>
 
-  <script src="/js/admin-editor.js"></script>
+  <script src="<%= assetUrl('/js/admin-editor.js') %>"></script>
   <script>
     const token = localStorage.getItem('token');
     let newsList = [];
@@ -170,9 +170,9 @@
       tbody.innerHTML = newsList.map(item => `
         <tr>
           <td>${item.id}</td>
-          <td><span class="badge badge-success">${categoryNames[item.category] || item.category}</span></td>
-          <td>${item.title}</td>
-          <td>${item.publish_date}</td>
+          <td><span class="badge badge-success">${adminEscape(categoryNames[item.category] || item.category)}</span></td>
+          <td>${adminEscape(item.title)}</td>
+          <td>${adminEscape(item.publish_date)}</td>
           <td>${item.is_top ? '<span class="badge badge-warning">置顶</span>' : '-'}</td>
           <td>${item.is_active ? '<span class="badge badge-success">显示</span>' : '<span class="badge badge-error">隐藏</span>'}</td>
           <td class="actions">
@@ -237,7 +237,7 @@
         const response = await fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({...payload,_revision:newsList.find(row=>String(row.id)===String(id))?._revision})
         });
         const data = await response.json();
         if (data.success) {
@@ -257,7 +257,7 @@
       try {
         const response = await fetch(`/api/news/${id}`, {
           method: 'DELETE',
-          headers: { 'Authorization': 'Bearer ' + token }
+          headers: { 'If-Match': newsList.find(row=>String(row.id)===String(id))?._revision || '',  'Authorization': 'Bearer ' + token }
         });
         const data = await response.json();
         if (data.success) {

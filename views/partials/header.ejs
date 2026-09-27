@@ -37,7 +37,7 @@
         </span>
         <span class="brand-copy">
           <strong><%= typeof siteSettings !== 'undefined' ? siteSettings.site_name : '电磁频谱认知智能通信实验室' %></strong>
-          <small>ELECTROMAGNETIC SPECTRUM COGNITION & INTELLIGENT COMMUNICATION LAB</small>
+          <small><%= siteSettings.site_subtitle || 'ELECTROMAGNETIC SPECTRUM COGNITION & INTELLIGENT COMMUNICATION LAB' %></small>
         </span>
       </a>
       <form class="header-search site-search-form" action="/search" method="get" role="search">

@@ -5,23 +5,19 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'nuaa-lab-jwt-secret-2026';
 
 // 管理员认证中间件
-function adminAuth(req, res, next) {
-  const token = req.headers.authorization?.split(' ')[1] || req.session.token;
-
-  if (!token) {
-    const redirectTo = req.originalUrl !== '/admin' ? '?redirect=' + encodeURIComponent(req.originalUrl) : '';
-    return res.redirect('/admin/login' + redirectTo);
-  }
-
+async function adminAuth(req,res,next) {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    res.locals.user = decoded;
+    req.user=await require('../services/auth').verify(require('../services/auth').bearer(req) || req.session.token);
+    res.locals.user=req.user;
+    if(req.user.role!=='superadmin' && !['/workspace','/account'].includes(req.path)) return res.redirect('/admin/workspace');
     next();
-  } catch (error) {
-    return res.redirect('/admin/login');
-  }
+  } catch(_) { res.redirect('/admin/login'); }
 }
+router.get('/register',(req,res)=>res.render('admin/register',{title:'申请普通管理员账号'}));
+router.get('/workspace',adminAuth,(req,res)=>res.render('admin/collaboration',{title:'我的内容',mode:'workspace'}));
+router.get('/accounts',adminAuth,(req,res)=>res.render('admin/collaboration',{title:'账号管理',mode:'accounts'}));
+router.get('/reviews',adminAuth,(req,res)=>res.render('admin/collaboration',{title:'内容审核',mode:'reviews'}));
+router.get('/account',adminAuth,(req,res)=>res.render('admin/collaboration',{title:'账号安全',mode:'account'}));
 
 // 登录页面
 router.get('/login', (req, res) => {

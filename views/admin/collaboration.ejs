@@ -1,0 +1,6 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><%= title %> - 实验室管理</title><link rel="stylesheet" href="<%= assetUrl('/css/admin.css') %>"><link rel="stylesheet" href="<%= assetUrl('/css/collaboration.css') %>"><link rel="stylesheet" href="<%= assetUrl('/css/admin-publish.css') %>"></head>
+<body><div class="admin-layout"><%- include('../partials/admin-sidebar') %><main class="admin-main contribution-main" data-mode="<%= mode %>">
+<header class="admin-header"><h1><%= title %></h1><div><span><%= user.name %> · <%= user.role==='superadmin'?'超级管理员':'普通管理员' %></span> <button type="button" class="btn" id="signOut">退出登录</button></div></header>
+<div class="admin-content"><p class="work-notice" id="workNotice" role="status"></p><div id="workContent"></div></div>
+</main></div><script src="<%= assetUrl('/js/admin-editor.js') %>"></script><script src="<%= assetUrl('/js/collaboration.js') %>"></script></body></html>

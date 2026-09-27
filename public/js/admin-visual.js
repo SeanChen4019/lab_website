@@ -431,6 +431,7 @@
         const data = await api(config.endpoint + '/' + encodeURIComponent(id));
         renderForm(type,{
           id:id,
+          _revision:data._revision,
           label:snapshot?.label || '页面文案',
           content:data.content || snapshot?.content || '<p></p>'
         },false);
@@ -469,7 +470,7 @@
       // 备份当前编辑内容到 localStorage
       try {
         const payload = collectPayload();
-        localStorage.setItem('cms-draft-' + editing.type, JSON.stringify({
+        localStorage.setItem('cms-draft-' + (JSON.parse(localStorage.getItem('user') || '{}').id || 'unknown') + '-' + editing.type, JSON.stringify({
           payload: payload,
           id: editing.id,
           isNew: editing.isNew,
@@ -496,7 +497,7 @@
     try {
       const url = editing.id ? config.endpoint + '/' + encodeURIComponent(editing.id) : config.endpoint;
       const method = editing.type === 'page-content' ? 'PUT' : (editing.id ? 'PUT' : 'POST');
-      await api(url,{ method:method, body:JSON.stringify(payload) });
+      await api(url,{ method:method, body:JSON.stringify({...payload,_revision:editing.item?._revision}) });
       showToast(editing.id ? '修改已保存，预览已更新' : '内容已添加，预览已更新','success');
       // 清除对应草稿
       localStorage.removeItem('cms-draft-' + editing.type);
@@ -516,7 +517,7 @@
     const config = configs[editing.type];
     if (!window.confirm('确定删除这条内容吗？删除后无法从前台恢复。')) return;
     try {
-      await api(config.endpoint + '/' + editing.id,{ method:'DELETE' });
+      await api(config.endpoint + '/' + editing.id,{ method:'DELETE', headers:{...headers(false),'If-Match':editing.item?._revision||''} });
       showToast('内容已删除','success');
       closeEditor();
       elements.preview.contentWindow.location.reload();

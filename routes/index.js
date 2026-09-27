@@ -65,6 +65,17 @@ router.get('/search', async (req, res) => {
   }
 });
 
+// Public news archive: every published article remains reachable.
+router.get('/news',async(req,res)=>{
+ try {
+  const count=await db.get('SELECT COUNT(*) AS n FROM news WHERE is_active=1');
+  const pages=Math.max(1,Math.ceil(count.n/12));
+  const page=Math.min(pages,Math.max(1,parseInt(req.query.page,10)||1));
+  const news=await db.all('SELECT * FROM news WHERE is_active=1 ORDER BY is_top DESC,publish_date DESC,id DESC LIMIT 12 OFFSET ?',[(page-1)*12]);
+  res.render('news',{title:'实验室新闻',news,page,pages});
+ }catch(e){res.status(500).render('error',{title:'错误',message:'新闻列表加载失败',code:500});}
+});
+
 // 通知公告列表
 router.get('/notices', async (req, res) => {
   try {
@@ -91,7 +102,8 @@ router.get('/about', async (req, res) => {
        WHERE member_type = 'teacher' AND role = 'leader' AND is_active = 1
        ORDER BY sort_order ASC, id ASC`
     );
-    res.render('about', { title: '实验室概况', leader, leaderTeam });
+    const researchAreas=await db.all('SELECT * FROM research_areas WHERE is_active=1 ORDER BY sort_order,id');
+    res.render('about', { title: '实验室概况', leader, leaderTeam, researchAreas });
   } catch (error) {
     console.error(error);
     res.status(500).render('error', { title: '错误', message: '页面加载失败', code: 500 });

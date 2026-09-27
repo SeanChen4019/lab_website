@@ -21,7 +21,7 @@
         <p>将军路校区：江苏省南京市江宁区将军大道29号　邮编 211106</p>
       </div>
       <div class="footer-meta">
-        <p>版权所有 © 南京航空航天大学</p>
+        <p><%= siteSettings.footer_text || '版权所有 © 南京航空航天大学' %></p>
         <p><%= typeof siteSettings !== 'undefined' ? siteSettings.icp_number : '苏ICP备05070685号' %></p>
       </div>
     </div>

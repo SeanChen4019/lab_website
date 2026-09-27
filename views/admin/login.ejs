@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>管理登录 - 电磁频谱认知智能通信实验室</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="<%= assetUrl('/css/admin.css') %>">
 </head>
 <body>
   <div class="login-container">
@@ -31,6 +31,7 @@
         </form>
       </div>
       <div class="login-footer">
+        <p><a href="/admin/register">没有账号？申请普通管理员账号</a></p>
         <p>南京航空航天大学 电子信息工程学院</p>
       </div>
     </div>
@@ -65,7 +66,7 @@
         if (data.success) {
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
-          window.location.href = redirectTo;
+          window.location.href = data.user.role === 'superadmin' ? redirectTo : '/admin/workspace';
         } else {
           errorDiv.textContent = data.message || '登录失败';
           errorDiv.style.display = 'block';

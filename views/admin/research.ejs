@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %> - 电磁频谱认知智能通信实验室</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="<%= assetUrl('/css/admin.css') %>">
 </head>
 <body>
   <div class="admin-layout">
@@ -113,9 +113,9 @@
       tbody.innerHTML = areas.map(a => `
         <tr>
           <td>${a.id}</td>
-          <td>${a.title}</td>
-          <td><i class="fas fa-${a.icon || 'flask'}"></i> ${a.icon || '-'}</td>
-          <td>${a.sort_order}</td>
+          <td>${adminEscape(a.title)}</td>
+          <td><i class="fas fa-${adminEscape(a.icon || 'flask')}"></i> ${adminEscape(a.icon || '-')}</td>
+          <td>${adminEscape(a.sort_order)}</td>
           <td>${a.is_active ? '<span class="badge badge-success">显示</span>' : '<span class="badge badge-error">隐藏</span>'}</td>
           <td class="actions">
             <button class="btn btn-sm btn-primary" onclick="editResearch(${a.id})"><i class="fas fa-edit"></i></button>
@@ -170,14 +170,14 @@
         const response = await fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({...payload,_revision:areas.find(row=>String(row.id)===String(id))?._revision})
         });
         const data = await response.json();
         if (data.success) {
           closeModal();
           loadResearch();
           alert(id ? '更新成功' : '添加成功');
-        }
+        } else { alert(data.message || '保存失败，请检查填写内容'); }
       } catch (error) {
         alert('操作失败');
       }
@@ -188,7 +188,7 @@
       try {
         const response = await fetch(`/api/research-areas/${id}`, {
           method: 'DELETE',
-          headers: { 'Authorization': 'Bearer ' + token }
+          headers: { 'If-Match': areas.find(row=>String(row.id)===String(id))?._revision || '',  'Authorization': 'Bearer ' + token }
         });
         const data = await response.json();
         if (data.success) {

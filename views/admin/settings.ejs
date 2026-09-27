@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %> - 电磁频谱认知智能通信实验室</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="<%= assetUrl('/css/admin.css') %>">
 </head>
 <body>
   <div class="admin-layout">
@@ -131,6 +131,7 @@
 
   <script>
     const token = localStorage.getItem('token');
+    let settingsRevision;
 
     async function loadSettings() {
       try {
@@ -140,6 +141,7 @@
         const data = await response.json();
         if (data.success) {
           const s = data.settings;
+          settingsRevision = data._revision;
           document.getElementById('site_name').value = s.site_name || '';
           document.getElementById('site_subtitle').value = s.site_subtitle || '';
           document.getElementById('site_keywords').value = s.site_keywords || '';
@@ -175,10 +177,11 @@
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token
           },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({...payload,_revision:settingsRevision})
         });
         const data = await response.json();
         if (data.success) {
+          await loadSettings();
           alert('设置已保存');
         } else {
           alert(data.message || '保存失败');
@@ -203,8 +206,8 @@
         return;
       }
 
-      if (newPass.length < 8) {
-        alert('新密码长度不能少于8位');
+      if (newPass.length < 10) {
+        alert('新密码长度不能少于10位');
         return;
       }
 
@@ -215,7 +218,7 @@
       });
       const data = await response.json();
       alert(data.message || (data.success ? '密码修改成功' : '密码修改失败'));
-      if (data.success) document.getElementById('passwordForm').reset();
+      if (data.success) { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href='/admin/login'; }
     }
 
     async function logout() {

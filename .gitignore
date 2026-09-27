@@ -35,3 +35,8 @@ qa-refinement/
 
 # ===== 杂项 =====
 新建文本文档.txt
+
+# Account workflow verification artifacts
+qa-access/
+database/*.lock
+database/*.tmp

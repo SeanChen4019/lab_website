@@ -28,7 +28,7 @@ const cookieSecure = process.env.COOKIE_SECURE === 'true'
     : 'auto';
 
 // 确保上传目录存在
-const uploadDir = path.join(__dirname, 'public', 'uploads');
+const uploadDir = process.env.LAB_UPLOAD_DIR || path.join(__dirname, 'public', 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -71,14 +71,17 @@ app.use(session({
 }));
 
 // 静态文件
+app.use('/uploads', express.static(uploadDir));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Content-derived public asset versions prevent mixed releases in browser caches.
 const crypto = require('crypto');
+const assetVersions = new Map();
 app.locals.assetUrl = function(assetPath) {
-  const file = path.join(__dirname, 'public', assetPath);
-  const version = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex').slice(0, 12);
-  return assetPath + '?v=' + version;
+  const file = path.join(__dirname, 'public', assetPath), stat=fs.statSync(file);
+  let item=assetVersions.get(assetPath);
+  if(!item || item.modified!==stat.mtimeMs || item.size!==stat.size){item={modified:stat.mtimeMs,size:stat.size,version:crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex').slice(0,12)};assetVersions.set(assetPath,item);}
+  return assetPath+'?v='+item.version;
 };
 
 // 全局变量中间件
@@ -138,7 +141,8 @@ app.use(async (req, res, next) => {
     ];
 
     res.locals.currentPath = req.path;
-    res.locals.cmsPreview = req.query.cms === '1' && Boolean(req.session && req.session.token);
+    res.locals.cmsPreview = false;
+    if(req.query.cms==='1' && req.session?.token){try{res.locals.cmsPreview=(await require('./services/auth').verify(req.session.token)).role==='superadmin';}catch(_){}}
     next();
   } catch (error) {
     console.error('Global middleware error:', error);
@@ -168,7 +172,10 @@ app.get('/healthz', async (req, res) => {
 
 app.use('/', indexRoutes);
 app.use('/admin', adminRoutes);
-app.use('/api', apiRoutes);
+app.use('/api', (req,res,next)=>{
+ if(['POST','PUT','PATCH'].includes(req.method) && req.is('application/json') && (!req.body || Array.isArray(req.body) || typeof req.body!=='object'))return res.status(400).json({success:false,message:'请求内容必须是对象'});
+ next();
+},apiRoutes);
 
 // 404处理
 app.use((req, res) => {
@@ -181,6 +188,11 @@ app.use((req, res) => {
 
 // 错误处理
 app.use((err, req, res, next) => {
+  if(req.path.startsWith('/api/')){
+    const status=err.status===413?413:err.status===400?400:500;
+    if(status===500)console.error(err.stack);
+    return res.status(status).json({success:false,message:status===413?'提交内容过大，请压缩图片或减少正文长度':status===400?'请求格式不正确':'服务暂时不可用，请稍后重试'});
+  }
   console.error(err.stack);
   res.status(500).render('error', {
     title: '服务器错误',
@@ -191,13 +203,9 @@ app.use((err, req, res, next) => {
 
 // 直接运行时启动服务器；测试代码 require 本文件时只取得 Express 应用。
 if (require.main === module) {
-  app.listen(PORT, HOST, () => {
-    console.log('==========================================');
-    console.log('  电磁频谱认知智能通信实验室网站');
-    console.log('  服务器已启动: http://' + HOST + ':' + PORT);
-    console.log('  管理后台: http://' + HOST + ':' + PORT + '/admin');
-    console.log('==========================================');
-  });
+  db.getDb().then(()=>{
+    const server=app.listen(PORT,HOST,()=>console.log('实验室网站已启动: http://'+HOST+':'+PORT));
+    for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>server.close(()=>process.exit(0)));
+  }).catch(error=>{console.error('启动失败：'+error.message);process.exitCode=1;});
 }
-
 module.exports = app;

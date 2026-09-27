@@ -63,6 +63,8 @@ mkdir -p dist
 tar -czf "${PKG_PATH}" \
   --exclude='node_modules' \
   --exclude='.git' \
+  --exclude='database/*.lock' \
+  --exclude='database/*.tmp' \
   server.js package.json package-lock.json \
   DEPLOY-UBUNTU.md UPDATE-ALUMNI-UBUNTU.md \
   database deploy public routes scripts services views

@@ -1,0 +1,10 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>申请普通管理员账号</title><link rel="stylesheet" href="<%= assetUrl('/css/admin.css') %>"><link rel="stylesheet" href="<%= assetUrl('/css/collaboration.css') %>"></head><body>
+<div class="login-container"><div class="login-box"><div class="login-header"><h1>申请普通管理员账号</h1><p>共同完善实验室资料</p></div><div class="login-body"><p class="work-help">请使用真实姓名，填写所在团队或身份。超级管理员开通账号后，你可以填写自己的资料并提交审核。</p>
+<form id="registrationForm"><div class="form-group"><label for="username">用户名</label><input id="username" name="username" required pattern="[a-zA-Z0-9_]{4,40}" maxlength="40" autocomplete="username" placeholder="4至40位字母、数字或下划线"></div>
+<div class="form-group"><label for="name">真实姓名</label><input id="name" name="name" required maxlength="100" autocomplete="name"></div>
+<div class="form-group"><label for="email">联系邮箱</label><input id="email" name="email" type="email" required maxlength="200" autocomplete="email"></div>
+<div class="form-group"><label for="password">密码</label><input id="password" name="password" type="password" required minlength="10" maxlength="72" autocomplete="new-password" placeholder="至少10位，含字母与数字"></div>
+<div class="form-group"><label for="confirmation">确认密码</label><input id="confirmation" type="password" required autocomplete="new-password"></div>
+<div class="form-group"><label for="application_note">申请说明</label><textarea id="application_note" name="application_note" maxlength="1000" placeholder="例如：2025级硕士，需要维护个人主页、填写论文信息"></textarea></div>
+<button class="login-btn" type="submit">提交注册申请</button><p id="registrationStatus" role="status"></p></form><p><a href="/admin/login">返回登录</a> · <a href="/">访问实验室网站</a></p></div></div></div>
+<script src="<%= assetUrl('/js/register.js') %>"></script></body></html>

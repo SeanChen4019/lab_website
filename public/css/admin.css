@@ -749,3 +749,10 @@ a {
   .publisher-preview-overlay { padding:0; }
   .publisher-preview-stage { padding:15px; }
 }
+.admin-mobile-nav { display:none; }
+@media(max-width:768px) {
+ .admin-mobile-nav { display:block; background:#123249; color:white; padding:12px 20px; }
+ .admin-mobile-nav summary { cursor:pointer; font-size:15px; min-height:24px; }
+ .admin-mobile-nav .sidebar-menu { padding:10px 0; max-height:65vh; overflow:auto; }
+ .admin-mobile-nav .menu-item { color:white; padding:10px 0; display:block; }
+}

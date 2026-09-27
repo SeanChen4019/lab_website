@@ -1,0 +1,26 @@
+.work-notice:empty { display:none; }
+.work-notice { background:#edf5f7; border-left:3px solid #347983; padding:14px 18px; border-radius:5px; margin-bottom:20px; color:#193e54; }
+.work-help { color:#657380; font-size:14px; line-height:1.9; margin:0 0 20px; }
+.work-toolbar { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:22px; }
+.work-panel { padding:26px; margin-bottom:24px; border:1px solid #dfe7ed; border-radius:10px; background:white; }
+.work-panel h2 { color:#173d55; font-size:20px; margin:0 0 18px; }
+.work-row { border-bottom:1px solid #e5ebef; padding:19px 0; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.work-row:last-child { border:0; }
+.work-row h3 { font-size:16px; line-height:1.6; margin:0 0 5px; overflow-wrap:anywhere; }
+.work-meta { color:#637485; font-size:13px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.work-actions { display:flex; gap:8px; flex-wrap:wrap; flex-shrink:0; }
+.work-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+.work-form label { display:block; font-size:14px; font-weight:600; margin-bottom:8px; }
+.work-form input,.work-form select,.work-form textarea,.work-toolbar select,.work-panel>select,.login-body textarea { width:100%; padding:11px 12px; border:1px solid #cdd9e2; border-radius:5px; font:inherit; background:#fff; color:#263d4b; }
+.work-form textarea { min-height:120px; resize:vertical; }
+.work-toolbar select { width:auto; max-width:100%; }
+.work-wide { grid-column:1/-1; }
+.work-form .work-actions { margin-top:8px; }
+.work-diff { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.work-diff pre { white-space:pre-wrap; overflow-wrap:anywhere; font:14px/1.8 inherit; padding:16px; background:#f4f7f9; border-radius:6px; margin:0; }
+.work-state { display:inline-block; border-radius:4px; padding:2px 8px; font-size:12px; background:#edf3f8; color:#2e607e; margin-right:8px; }
+.contribution-main .admin-header { gap:18px; }
+#registrationStatus { margin:15px 0; color:#245c76; }
+.work-panel .btn { white-space:normal; }
+@media(max-width:768px) { .work-form,.work-diff { grid-template-columns:1fr; } .work-row { align-items:flex-start; flex-direction:column; } .work-panel { padding:18px; } .contribution-main .admin-header { flex-direction:column; align-items:flex-start; } .work-form .work-wide { grid-column:auto; } .work-actions { flex-shrink:1; } }
+.work-row[hidden] { display:none; }

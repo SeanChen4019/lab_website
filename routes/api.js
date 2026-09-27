@@ -28,6 +28,7 @@ function rateLimitLogin(req, res, next) {
     loginAttempts.set(ip, { count: 0, resetTime: now + LOGIN_WINDOW_MS });
   }
 
+  loginAttempts.get(ip).count++;
   next();
 }
 
@@ -111,6 +112,7 @@ function normalizeYear(value) {
 function normalizeUrl(value, options = {}) {
   const text = String(value || '').trim();
   if (!text) return '';
+  if (/[\\\u0000-\u0020]/.test(text)) return null;
   if (text.startsWith('/') && !text.startsWith('//')) return text;
   try {
     const parsed = new URL(text);
@@ -157,25 +159,14 @@ function cleanRichContent(content = '') {
 }
 
 // JWT验证中间件 — 仅接受 Bearer token（不使用 session 回退，避免 CSRF）
-function authMiddleware(req, res, next) {
-  const authHeader = req.headers.authorization;
-  const token = authHeader ? authHeader.split(' ')[1] : null;
+const auth = require('../services/auth');
+const authMiddleware = auth.apiAuth;
 
-  if (!token) {
-    return res.status(401).json({ success: false, message: '未授权，请先登录' });
-  }
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ success: false, message: 'Token无效或已过期' });
-  }
-}
+// Registration, personal drafts, review and account administration.
+router.use(require('./collaboration'));
 
 // ---- 文件上传（复用 server.js 中的 multer 配置） ----
-const uploadDir = path.join(__dirname, '..', 'public', 'uploads');
+const uploadDir = process.env.LAB_UPLOAD_DIR || path.join(__dirname, '..', 'public', 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -213,7 +204,7 @@ router.post('/auth/login', rateLimitLogin, async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    if (!username || !password) {
+    if (typeof username !== 'string' || typeof password !== 'string' || !username || !password) {
       return res.status(400).json({ success: false, message: '请输入用户名和密码' });
     }
 
@@ -231,25 +222,18 @@ router.post('/auth/login', rateLimitLogin, async (req, res) => {
     );
 
     if (!admin) {
-      if (record) record.count++;
       return res.status(401).json({ success: false, message: '用户名或密码错误' });
     }
 
-    const isValidPassword = bcrypt.compareSync(password, admin.password);
+    const isValidPassword = await bcrypt.compare(password, admin.password);
     if (!isValidPassword) {
-      if (record) record.count++;
       return res.status(401).json({ success: false, message: '用户名或密码错误' });
     }
 
-    // 登录成功，清除失败记录
+    if (admin.status !== 'active') return res.status(403).json({success:false,message:admin.status==='pending'?'账号等待超级管理员审核':'账号已停用，请联系超级管理员'});
     loginAttempts.delete(ip);
-
-    const token = jwt.sign(
-      { id: admin.id, username: admin.username, role: admin.role },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
+    const token = await auth.issue(admin);
+    await new Promise((resolve,reject)=>req.session.regenerate(e=>e?reject(e):resolve()));
     req.session.token = token;
 
     res.json({
@@ -265,14 +249,14 @@ router.post('/auth/login', rateLimitLogin, async (req, res) => {
     });
   } catch (error) {
     console.error('登录错误:', error);
-    res.status(500).json({ success: false, message: '服务器错误' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '服务器错误' });
   }
 });
 
 // 登出
-router.post('/auth/logout', (req, res) => {
-  req.session.destroy();
-  res.json({ success: true, message: '已退出登录' });
+router.post('/auth/logout', async (req,res) => {
+  try { const user=await auth.verify(auth.bearer(req) || req.session.token); await db.run('DELETE FROM auth_sessions WHERE jti=?',[user.jti]); } catch(_) {}
+  req.session.destroy(()=>res.json({success:true,message:'已退出登录'}));
 });
 
 // 获取当前用户信息
@@ -284,32 +268,74 @@ router.get('/auth/me', authMiddleware, async (req, res) => {
     );
     res.json({ success: true, user: admin });
   } catch (error) {
-    res.status(500).json({ success: false, message: '服务器错误' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '服务器错误' });
   }
 });
 
 router.put('/auth/password', authMiddleware, validateLengths(['password']), async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword || newPassword.length < 8) {
-      return res.status(400).json({ success: false, message: '新密码至少需要8位' });
+    if (typeof currentPassword !== 'string' || typeof newPassword !== 'string' || !currentPassword || newPassword.length < 10) {
+      return res.status(400).json({ success: false, message: '新密码至少需要10位' });
     }
-    if (String(currentPassword).length > 128 || String(newPassword).length > 128) {
-      return res.status(400).json({ success: false, message: '密码长度不能超过128位' });
+    if (Buffer.byteLength(currentPassword) > 72 || Buffer.byteLength(newPassword) > 72) {
+      return res.status(400).json({ success: false, message: '密码长度不能超过72字节' });
     }
     // 密码复杂度：至少包含字母和数字
     if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
       return res.status(400).json({ success: false, message: '新密码需要包含字母和数字' });
     }
     const admin = await db.get('SELECT * FROM admins WHERE id = ?', [req.user.id]);
-    if (!admin || !bcrypt.compareSync(currentPassword, admin.password)) {
+    if (!admin || !await bcrypt.compare(currentPassword, admin.password)) {
       return res.status(400).json({ success: false, message: '当前密码不正确' });
     }
-    await db.run('UPDATE admins SET password = ? WHERE id = ?', [bcrypt.hashSync(newPassword, 10), req.user.id]);
+    const hash=await bcrypt.hash(newPassword,10);
+    await db.transaction(tx=>{
+      const now=tx.get('SELECT password,token_version FROM admins WHERE id=?',[req.user.id]);
+      if(!now||now.password!==admin.password||now.token_version!==admin.token_version)throw Object.assign(new Error('账号状态已改变，请重新登录'),{status:409});
+      tx.run('UPDATE admins SET password=?,token_version=token_version+1 WHERE id=?',[hash,req.user.id]);
+    });
     res.json({ success: true, message: '密码已更新' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '密码更新失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '密码更新失败' });
   }
+});
+
+router.use((req,res,next) => {
+  if(req.path === '/upload' && req.method === 'POST') return next();
+  authMiddleware(req,res,()=>auth.superOnly(req,res,next));
+});
+
+const writeConflict=require('../services/write-conflict');
+const legacyTables={banners:'banners',news:'news',notices:'notices',team:'team_members',alumni:'alumni','research-areas':'research_areas',projects:'projects',downloads:'downloads',platforms:'platforms',patents:'patents',papers:'papers','social-posts':'social_posts'};
+router.use(async(req,res,next)=>{
+ try {
+  const parts=req.path.split('/').filter(Boolean),table=Object.hasOwn(legacyTables,parts[0])?legacyTables[parts[0]]:null;
+  if(table && req.method==='GET'){
+   const json=res.json.bind(res);
+   res.json=data=>{for(const key of Object.keys(data))if(Array.isArray(data[key]))data[key]=data[key].map(row=>({...row,_revision:writeConflict.revision(row)}));return json(data);};
+  }
+  if(table && ['POST','PUT'].includes(req.method)) {
+   for(const [field,value] of Object.entries(req.body)){
+    if(value!=null && !['string','number','boolean'].includes(typeof value))return res.status(400).json({success:false,message:'字段格式不正确：'+field});
+    if(typeof value==='string' && value.length>(LIMITS[field] || (field==='content'?50000:2000)))return res.status(400).json({success:false,message:'字段过长：'+field});
+   }
+   const key=['team','alumni','platforms'].includes(parts[0])?'name':'title';
+   if(typeof req.body[key]!=='string' || !req.body[key].trim()) return res.status(400).json({success:false,message:'请填写'+(key==='name'?'名称':'标题')});
+   for(const field of ['image_url','photo_url','cover_image','file_url','link_url','link','pdf_url','code_url','url']) {
+    if(req.body[field]!=null && normalizeUrl(req.body[field],{allowMail:field==='link_url'})===null) return res.status(400).json({success:false,message:'链接或图片地址不正确'});
+   }
+  }
+  if(table && ['PUT','DELETE'].includes(req.method) && parts.length===2){
+   const existing=/^\d+$/.test(parts[1]) ? await db.get('SELECT * FROM '+table+' WHERE id=?',[parts[1]]) : null;
+   if(!existing)return res.status(404).json({success:false,message:'记录不存在或已被删除，请刷新列表'});
+   const expected=req.get('If-Match') || req.body?._revision || writeConflict.revision(existing);
+   if(typeof expected!=='string'||expected!==writeConflict.revision(existing))return res.status(409).json({success:false,message:'资料已被修改，请刷新列表后重新编辑'});
+   if(req.method==='PUT')req.body={...existing,...req.body};
+   return writeConflict.run({table,id:existing.id,expected},next);
+  }
+  next();
+ }catch(e){next(e);}
 });
 
 // ============ 轮播图管理 ============
@@ -319,7 +345,7 @@ router.get('/banners', authMiddleware, async (req, res) => {
     const banners = await db.all('SELECT * FROM banners ORDER BY sort_order ASC');
     res.json({ success: true, banners });
   } catch (error) {
-    res.status(500).json({ success: false, message: '获取失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取失败' });
   }
 });
 
@@ -332,7 +358,7 @@ router.post('/banners', authMiddleware, validateLengths(['title']), async (req, 
     );
     res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '添加失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '添加失败' });
   }
 });
 
@@ -345,7 +371,7 @@ router.put('/banners/:id', authMiddleware, validateLengths(['title']), async (re
     );
     res.json({ success: true, message: '更新成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '更新失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '更新失败' });
   }
 });
 
@@ -354,7 +380,7 @@ router.delete('/banners/:id', authMiddleware, async (req, res) => {
     await db.run('DELETE FROM banners WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: '删除成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '删除失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '删除失败' });
   }
 });
 
@@ -365,7 +391,7 @@ router.get('/notices', authMiddleware, async (req, res) => {
     const notices = await db.all('SELECT * FROM notices ORDER BY is_top DESC, publish_date DESC');
     res.json({ success: true, notices });
   } catch (error) {
-    res.status(500).json({ success: false, message: '获取失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取失败' });
   }
 });
 
@@ -386,7 +412,7 @@ router.post('/notices', authMiddleware, validateLengths(['title', 'content']), a
     res.status(201).json({ success: true, message: '发布成功', id, url: '/notice/' + id });
   } catch (error) {
     console.error('通知发布失败:', error);
-    res.status(500).json({ success: false, message: '添加失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '添加失败' });
   }
 });
 
@@ -405,7 +431,7 @@ router.put('/notices/:id', authMiddleware, validateLengths(['title', 'content'])
     );
     res.json({ success: true, message: '更新成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '更新失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '更新失败' });
   }
 });
 
@@ -414,7 +440,7 @@ router.delete('/notices/:id', authMiddleware, async (req, res) => {
     await db.run('DELETE FROM notices WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: '删除成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '删除失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '删除失败' });
   }
 });
 
@@ -435,7 +461,7 @@ router.get('/news', authMiddleware, async (req, res) => {
     const news = await db.all(sql, params);
     res.json({ success: true, news });
   } catch (error) {
-    res.status(500).json({ success: false, message: '获取失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取失败' });
   }
 });
 
@@ -460,7 +486,7 @@ router.post('/news', authMiddleware, validateLengths(['title', 'summary', 'conte
     res.status(201).json({ success: true, message: '发布成功', id, url: '/news/' + id });
   } catch (error) {
     console.error('新闻发布失败:', error);
-    res.status(500).json({ success: false, message: '添加失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '添加失败' });
   }
 });
 
@@ -483,7 +509,7 @@ router.put('/news/:id', authMiddleware, validateLengths(['title', 'summary', 'co
     );
     res.json({ success: true, message: '更新成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '更新失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '更新失败' });
   }
 });
 
@@ -492,7 +518,7 @@ router.delete('/news/:id', authMiddleware, async (req, res) => {
     await db.run('DELETE FROM news WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: '删除成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '删除失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '删除失败' });
   }
 });
 
@@ -509,7 +535,7 @@ router.get('/team', authMiddleware, async (req, res) => {
     `);
     res.json({ success: true, members });
   } catch (error) {
-    res.status(500).json({ success: false, message: '获取失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取失败' });
   }
 });
 
@@ -550,7 +576,7 @@ router.post('/team', authMiddleware, validateLengths(['name', 'title', 'bio', 'e
     res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/team/' + result.lastID });
   } catch (error) {
     console.error('团队成员添加失败:', error);
-    res.status(500).json({ success: false, message: '添加失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '添加失败' });
   }
 });
 
@@ -591,7 +617,7 @@ router.put('/team/:id', authMiddleware, validateLengths(['name', 'title', 'bio',
     );
     res.json({ success: true, message: '更新成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '更新失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '更新失败' });
   }
 });
 
@@ -600,7 +626,7 @@ router.delete('/team/:id', authMiddleware, async (req, res) => {
     await db.run('DELETE FROM team_members WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: '删除成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '删除失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '删除失败' });
   }
 });
 
@@ -614,7 +640,7 @@ router.get('/alumni', authMiddleware, async (req, res) => {
     `);
     res.json({ success: true, alumni });
   } catch (error) {
-    res.status(500).json({ success: false, message: '获取历届毕业生失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取历届毕业生失败' });
   }
 });
 
@@ -639,7 +665,7 @@ router.post('/alumni', authMiddleware, validateLengths(['name', 'major', 'destin
     );
     res.status(201).json({ success: true, message: '毕业生信息添加成功', id: result.lastID, url: '/alumni' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '添加毕业生信息失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '添加毕业生信息失败' });
   }
 });
 
@@ -666,7 +692,7 @@ router.put('/alumni/:id', authMiddleware, validateLengths(['name', 'major', 'des
     );
     res.json({ success: true, message: '毕业生信息更新成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '更新毕业生信息失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '更新毕业生信息失败' });
   }
 });
 
@@ -675,7 +701,7 @@ router.delete('/alumni/:id', authMiddleware, async (req, res) => {
     await db.run('DELETE FROM alumni WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: '毕业生信息已删除' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '删除毕业生信息失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '删除毕业生信息失败' });
   }
 });
 
@@ -689,7 +715,7 @@ router.get('/research-areas', authMiddleware, async (req, res) => {
     // 已缓存旧脚本的浏览器还在用它。两者指向同一个数组。
     res.json({ success: true, areas, researchAreas: areas });
   } catch (error) {
-    res.status(500).json({ success: false, message: '获取失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取失败' });
   }
 });
 
@@ -702,7 +728,7 @@ router.post('/research-areas', authMiddleware, validateLengths(['title', 'descri
     );
     res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/research' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '添加失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '添加失败' });
   }
 });
 
@@ -711,11 +737,11 @@ router.put('/research-areas/:id', authMiddleware, validateLengths(['title', 'des
     const { title, description, icon, sort_order, is_active } = req.body;
     await db.run(
       'UPDATE research_areas SET title = ?, description = ?, icon = ?, sort_order = ?, is_active = ? WHERE id = ?',
-      [title, description, icon, sort_order, is_active, req.params.id]
+      [title, description || '', icon || '', Number(sort_order) || 0, normalizeFlag(is_active, 1), req.params.id]
     );
     res.json({ success: true, message: '更新成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '更新失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '更新失败' });
   }
 });
 
@@ -724,7 +750,7 @@ router.delete('/research-areas/:id', authMiddleware, async (req, res) => {
     await db.run('DELETE FROM research_areas WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: '删除成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '删除失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '删除失败' });
   }
 });
 
@@ -735,7 +761,7 @@ router.get('/projects', authMiddleware, async (req, res) => {
     const projects = await db.all('SELECT * FROM projects ORDER BY start_date DESC');
     res.json({ success: true, projects });
   } catch (error) {
-    res.status(500).json({ success: false, message: '获取失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取失败' });
   }
 });
 
@@ -746,12 +772,12 @@ router.post('/projects', authMiddleware, validateLengths(['title', 'description'
     if (checkedCover === null) return res.status(400).json({ success: false, message: '封面图地址不正确' });
     const result = await db.run(
       'INSERT INTO projects (title, description, funding_source, start_date, end_date, status, is_active, content, cover_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [title, description, funding_source || '', start_date, end_date, status || '进行中', is_active,
+      [title, description || '', funding_source || '', start_date || '', end_date || '', status || '进行中', normalizeFlag(is_active, 1),
        cleanRichContent(content), checkedCover]
     );
     res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/achievements#projects' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '添加失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '添加失败' });
   }
 });
 
@@ -762,12 +788,12 @@ router.put('/projects/:id', authMiddleware, validateLengths(['title', 'descripti
     if (checkedCover === null) return res.status(400).json({ success: false, message: '封面图地址不正确' });
     await db.run(
       'UPDATE projects SET title = ?, description = ?, funding_source = ?, start_date = ?, end_date = ?, status = ?, is_active = ?, content = ?, cover_image = ? WHERE id = ?',
-      [title, description, funding_source, start_date, end_date, status, is_active,
+      [title, description || '', funding_source || '', start_date || '', end_date || '', status || '进行中', normalizeFlag(is_active, 1),
        cleanRichContent(content), checkedCover, req.params.id]
     );
     res.json({ success: true, message: '更新成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '更新失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '更新失败' });
   }
 });
 
@@ -776,7 +802,7 @@ router.delete('/projects/:id', authMiddleware, async (req, res) => {
     await db.run('DELETE FROM projects WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: '删除成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '删除失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '删除失败' });
   }
 });
 
@@ -787,7 +813,7 @@ router.get('/downloads', authMiddleware, async (req, res) => {
     const downloads = await db.all('SELECT * FROM downloads ORDER BY category, created_at DESC');
     res.json({ success: true, downloads });
   } catch (error) {
-    res.status(500).json({ success: false, message: '获取失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取失败' });
   }
 });
 
@@ -804,7 +830,7 @@ router.post('/downloads', authMiddleware, validateLengths(['title', 'description
     );
     res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/downloads' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '添加失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '添加失败' });
   }
 });
 
@@ -821,7 +847,7 @@ router.put('/downloads/:id', authMiddleware, validateLengths(['title', 'descript
     );
     res.json({ success: true, message: '更新成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '更新失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '更新失败' });
   }
 });
 
@@ -830,7 +856,7 @@ router.delete('/downloads/:id', authMiddleware, async (req, res) => {
     await db.run('DELETE FROM downloads WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: '删除成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '删除失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '删除失败' });
   }
 });
 
@@ -841,7 +867,7 @@ router.get('/platforms', authMiddleware, async (req, res) => {
     const platforms = await db.all('SELECT * FROM platforms ORDER BY sort_order ASC, id ASC');
     res.json({ success: true, platforms });
   } catch (error) {
-    res.status(500).json({ success: false, message: '获取失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取失败' });
   }
 });
 
@@ -859,7 +885,7 @@ router.post('/platforms', authMiddleware, validateLengths(['name', 'description'
     );
     res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/platforms' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '添加失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '添加失败' });
   }
 });
 
@@ -877,7 +903,7 @@ router.put('/platforms/:id', authMiddleware, validateLengths(['name', 'descripti
     );
     res.json({ success: true, message: '更新成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '更新失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '更新失败' });
   }
 });
 
@@ -886,7 +912,7 @@ router.delete('/platforms/:id', authMiddleware, async (req, res) => {
     await db.run('DELETE FROM platforms WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: '删除成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '删除失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '删除失败' });
   }
 });
 
@@ -897,7 +923,7 @@ router.get('/patents', authMiddleware, async (req, res) => {
     const patents = await db.all('SELECT * FROM patents ORDER BY grant_date DESC, sort_order ASC, id ASC');
     res.json({ success: true, patents });
   } catch (error) {
-    res.status(500).json({ success: false, message: '获取失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取失败' });
   }
 });
 
@@ -920,7 +946,7 @@ router.post('/patents', authMiddleware, validateLengths(['title', 'patent_no', '
     );
     res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/achievements#patents' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '添加失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '添加失败' });
   }
 });
 
@@ -944,7 +970,7 @@ router.put('/patents/:id', authMiddleware, validateLengths(['title', 'patent_no'
     );
     res.json({ success: true, message: '更新成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '更新失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '更新失败' });
   }
 });
 
@@ -953,7 +979,7 @@ router.delete('/patents/:id', authMiddleware, async (req, res) => {
     await db.run('DELETE FROM patents WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: '删除成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '删除失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '删除失败' });
   }
 });
 
@@ -964,7 +990,7 @@ router.get('/papers', authMiddleware, async (req, res) => {
     const papers = await db.all('SELECT * FROM papers ORDER BY year DESC, sort_order ASC, id ASC');
     res.json({ success: true, papers });
   } catch (error) {
-    res.status(500).json({ success: false, message: '获取失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取失败' });
   }
 });
 
@@ -1001,7 +1027,7 @@ router.post('/papers', authMiddleware, validateLengths(['title', 'authors', 'ven
     );
     res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/achievements#papers' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '添加失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '添加失败' });
   }
 });
 
@@ -1039,7 +1065,7 @@ router.put('/papers/:id', authMiddleware, validateLengths(['title', 'authors', '
     );
     res.json({ success: true, message: '更新成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '更新失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '更新失败' });
   }
 });
 
@@ -1048,7 +1074,7 @@ router.delete('/papers/:id', authMiddleware, async (req, res) => {
     await db.run('DELETE FROM papers WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: '删除成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '删除失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '删除失败' });
   }
 });
 
@@ -1059,7 +1085,7 @@ router.get('/social-posts', authMiddleware, async (req, res) => {
     const posts = await db.all('SELECT * FROM social_posts ORDER BY sort_order ASC, publish_date DESC, id ASC');
     res.json({ success: true, posts });
   } catch (error) {
-    res.status(500).json({ success: false, message: '获取失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取失败' });
   }
 });
 
@@ -1082,7 +1108,7 @@ router.post('/social-posts', authMiddleware, validateLengths(['title', 'platform
     );
     res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '添加失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '添加失败' });
   }
 });
 
@@ -1105,7 +1131,7 @@ router.put('/social-posts/:id', authMiddleware, validateLengths(['title', 'platf
     );
     res.json({ success: true, message: '更新成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '更新失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '更新失败' });
   }
 });
 
@@ -1114,7 +1140,7 @@ router.delete('/social-posts/:id', authMiddleware, async (req, res) => {
     await db.run('DELETE FROM social_posts WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: '删除成功' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '删除失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '删除失败' });
   }
 });
 
@@ -1127,9 +1153,9 @@ router.get('/page-content/:key', authMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: '页面文案标识不合法' });
     }
     const row = await db.get('SELECT value FROM settings WHERE key = ?', ['page_content_' + key]);
-    res.json({ success: true, content: row ? row.value : '' });
+    res.json({ success: true, content: row ? row.value : '', _revision:writeConflict.revision({value:row?.value||''}) });
   } catch (error) {
-    res.status(500).json({ success: false, message: '获取页面文案失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取页面文案失败' });
   }
 });
 
@@ -1143,13 +1169,14 @@ router.put('/page-content/:key', authMiddleware, async (req, res) => {
     if (content.length > 50000) {
       return res.status(400).json({ success: false, message: '页面文案内容过长' });
     }
-    await db.run(
-      'INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
-      ['page_content_' + key, cleanRichContent(content)]
-    );
+    await db.transaction(tx=>{
+      const row=tx.get('SELECT value FROM settings WHERE key=?',['page_content_'+key]);
+      if(req.body._revision && req.body._revision!==writeConflict.revision({value:row?.value||''}))throw Object.assign(new Error('页面文案已更新，请刷新后再编辑'),{status:409});
+      tx.run('INSERT OR REPLACE INTO settings (key,value,updated_at) VALUES (?,?,CURRENT_TIMESTAMP)',['page_content_'+key,cleanRichContent(content)]);
+    });
     res.json({ success: true, message: '页面文案已更新' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '更新页面文案失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '更新页面文案失败' });
   }
 });
 
@@ -1160,9 +1187,9 @@ router.get('/settings', authMiddleware, async (req, res) => {
     const settings = await db.all("SELECT * FROM settings WHERE key NOT LIKE 'page_content_%'");
     const settingsObj = {};
     settings.forEach(s => { settingsObj[s.key] = s.value; });
-    res.json({ success: true, settings: settingsObj });
+    res.json({ success: true, settings: settingsObj, _revision:writeConflict.revision(settingsObj) });
   } catch (error) {
-    res.status(500).json({ success: false, message: '获取失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取失败' });
   }
 });
 
@@ -1175,25 +1202,23 @@ const ALLOWED_SETTINGS_KEYS = [
 
 router.put('/settings', authMiddleware, async (req, res) => {
   try {
-    const settings = req.body;
-    for (const [key, value] of Object.entries(settings)) {
-      if (!ALLOWED_SETTINGS_KEYS.includes(key)) continue; // 忽略未授权的 key
-      if (typeof value !== 'string' || value.length > 1000) continue;
-      await db.run(
-        'INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
-        [key, value]
-      );
-    }
+    const entries=Object.entries(req.body).filter(([key])=>ALLOWED_SETTINGS_KEYS.includes(key));
+    if(entries.some(([,value])=>typeof value!=='string'||value.length>1000))return res.status(400).json({success:false,message:'设置内容格式错误或超过1000字'});
+    await db.transaction(tx=>{
+      const settings={};for(const item of tx.all("SELECT key,value FROM settings WHERE key NOT LIKE 'page_content_%'"))settings[item.key]=item.value;
+      if(req.body._revision && req.body._revision!==writeConflict.revision(settings))throw Object.assign(new Error('网站设置已被其他操作修改，请刷新后重试'),{status:409});
+      for(const [key,value] of entries)tx.run('INSERT OR REPLACE INTO settings (key,value,updated_at) VALUES (?,?,CURRENT_TIMESTAMP)',[key,value]);
+    });
     res.json({ success: true, message: '设置已更新' });
   } catch (error) {
-    res.status(500).json({ success: false, message: '更新失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '更新失败' });
   }
 });
 
 // ============ 文件上传 ============
 
 router.post('/upload', authMiddleware, (req, res) => {
-  upload.single('file')(req, res, function (err) {
+  upload.single('file')(req, res, async function (err) {
     if (err) {
       return res.status(400).json({ success: false, message: err.message });
     }
@@ -1202,6 +1227,8 @@ router.post('/upload', authMiddleware, (req, res) => {
       return res.status(400).json({ success: false, message: '请选择文件' });
     }
 
+    try { await require('../services/validate-upload')(req.file); }
+    catch(error){try{await fs.promises.unlink(req.file.path);}catch(_){} return res.status(error.status||500).json({success:false,message:error.status?error.message:'文件检查失败，请重试'});}
     const fileUrl = '/uploads/' + req.file.filename;
     res.json({
       success: true,
@@ -1244,7 +1271,7 @@ router.get('/stats', authMiddleware, async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: '获取统计失败' });
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取统计失败' });
   }
 });
 

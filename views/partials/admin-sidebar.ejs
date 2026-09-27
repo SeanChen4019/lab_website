@@ -1,3 +1,4 @@
+<script src="<%= assetUrl('/js/admin-safe.js') %>"></script>
 <%
 // 从 currentPath 自动推导当前激活的页面
 var pathParts = (typeof currentPath !== 'undefined' ? currentPath : '').split('/');
@@ -9,6 +10,11 @@ var adminPage = pathParts[2] || 'dashboard';
     <p>电磁频谱认知智能通信实验室</p>
   </div>
   <nav class="sidebar-menu">
+    <a href="/admin/workspace" class="menu-item<%= adminPage === 'workspace' ? ' active' : '' %>"><span>我的内容 / 填写资料</span></a>
+    <a href="/admin/account" class="menu-item<%= adminPage === 'account' ? ' active' : '' %>"><span>账号安全</span></a>
+    <% if (typeof user !== 'undefined' && user.role === 'superadmin') { %>
+    <a href="/admin/accounts" class="menu-item<%= adminPage === 'accounts' ? ' active' : '' %>"><span>账号管理 / 分配资料</span></a>
+    <a href="/admin/reviews" class="menu-item<%= adminPage === 'reviews' ? ' active' : '' %>"><span>内容审核</span></a>
     <a href="/admin/publish" class="menu-item<%= adminPage === 'publish' ? ' active' : '' %>">
       <i class="fas fa-paper-plane"></i><span>极速发布</span>
     </a>
@@ -54,6 +60,7 @@ var adminPage = pathParts[2] || 'dashboard';
     <a href="/admin/settings" class="menu-item<%= adminPage === 'settings' ? ' active' : '' %>">
       <i class="fas fa-cog"></i><span>系统设置</span>
     </a>
+    <% } %>
     <a href="/" class="menu-item" target="_blank">
       <i class="fas fa-external-link-alt"></i><span>访问前台</span>
     </a>

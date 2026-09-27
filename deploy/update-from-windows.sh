@@ -7,7 +7,7 @@
 #   1) 用最新代码打一个干净的部署包（排除 node_modules）
 #   2) scp 上传到服务器
 #   3) ssh 登录服务器：先备份数据库和已上传文件 → 只更新代码（不动数据库和上传文件）
-#      → 安装依赖 → 填充新板块演示内容 → 重启服务 → 健康检查
+#      → 安装依赖 → 执行增量迁移 → 重启服务 → 健康检查
 #
 # 用法：在 Git Bash 里进入项目目录，运行：  bash deploy/update-from-windows.sh
 # 过程中会提示输入服务器密码（scp 一次、ssh 一次），输入即可（屏幕不显示是正常的）。
@@ -19,6 +19,7 @@ SERVER_USER="root"                 # SSH 登录用户名，和首次部署时一
 SERVER_IP="121.199.37.30"          # 服务器公网 IP
 # ========================================================
 
+warn() { echo "提示：$*"; }
 step() { echo; echo "==== $* ===="; }
 ok()   { echo "✓ $*"; }
 die()  { echo "✗ $*" >&2; exit 1; }
@@ -47,6 +48,8 @@ mkdir -p dist
 tar -czf "${PKG_PATH}" \
   --exclude='node_modules' \
   --exclude='.git' \
+  --exclude='database/*.lock' \
+  --exclude='database/*.tmp' \
   server.js package.json package-lock.json \
   DEPLOY-UBUNTU.md UPDATE-ALUMNI-UBUNTU.md \
   database deploy public routes scripts services views
@@ -64,20 +67,22 @@ warn "服务器网站会中断约 1 分钟，属正常现象。"
 ssh -t "${SERVER_USER}@${SERVER_IP}" "
   set -e
   APP='${REMOTE_APP_DIR}'
+  sudo systemctl stop lab-website
+  trap 'sudo systemctl start lab-website' EXIT
   echo '→ 1/6 备份数据库和已上传文件 ...'
   sudo tar -czf ~/lab-website-backup-\$(date +%F-%H%M).tar.gz -C \${APP} database/lab.db public/uploads
   ls -lh ~/lab-website-backup-*.tar.gz | tail -1
 
   echo '→ 2/6 解压新版本代码（不动数据库和已上传文件）...'
-  tar -xzf ~/'${PKG_NAME}' -C \${APP} --exclude='database/lab.db' --exclude='public/uploads'
+  tar -xzf ~/'${PKG_NAME}' -C \${APP} --exclude='database/lab.db' --exclude='database/*.lock' --exclude='database/*.tmp' --exclude='public/uploads'
 
   echo '→ 3/6 安装依赖（依赖没变化时很快）...'
   cd \${APP}
   sudo -u labwebsite npm install --omit=dev --no-audit --no-fund --loglevel=error
 
-  echo '→ 4/6 停服务并填充新板块内容（平台/专利/论文/媒体报道/学生/数据集/教材）...'
+  echo '→ 4/6 执行保留现有内容的增量迁移 ...'
   sudo systemctl stop lab-website
-  sudo -u labwebsite node database/seed-nav-content.js
+  sudo -u labwebsite node scripts/migrate.js
 
   echo '→ 5/6 重新启动网站服务 ...'
   sudo systemctl start lab-website
@@ -93,13 +98,13 @@ ssh -t "${SERVER_USER}@${SERVER_IP}" "
 
 echo
 ok "更新完成！现在可以做最后确认："
-echo "  1. 浏览器打开  https://你的域名/          首页应显示「实验室新闻 + 媒体关注」滚动"
-echo "  2. 打开        https://你的域名/platforms  平台页应有 4 个平台"
+echo "  1. 浏览器打开  https://你的域名/          首页应显示现有新闻与媒体内容"
+echo "  2. 打开        https://你的域名/platforms  平台页应保留现有平台资料"
 echo "  3. 打开        https://你的域名/team       团队页有 教师 / 在读学生 / 毕业学生去向"
-echo "  4. 打开        https://你的域名/admin      后台侧栏多了 专利/论文/平台/媒体报道 管理"
+echo "  4. 打开        https://你的域名/admin      后台侧栏可见 账号管理 / 内容审核 / 我的内容"
 echo
 echo "说明："
 echo "  · 服务器上的数据库没有被覆盖，你在后台发过的通知/新闻、改过的密码都还在；"
-echo "    新板块（平台/专利/论文/媒体报道/学生）填的是演示内容，可在后台逐条改成真实资料。"
+echo "    更新只迁移数据结构，不填充演示内容。"
 echo "  · 更新前已自动备份到服务器 ~/lab-website-backup-*.tar.gz，"
 echo "    万一有问题，把这一行发给我会告诉你怎么恢复。"

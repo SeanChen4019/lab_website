@@ -4,6 +4,17 @@ const db = require('../database/db');
 
 const requiredPaths = [
   'server.js',
+  'database/access-migration.js',
+  'services/auth.js',
+  'services/write-conflict.js',
+  'services/validate-upload.js',
+  'services/contributions.js',
+  'services/rich-content.js',
+  'routes/collaboration.js',
+  'views/admin/collaboration.ejs',
+  'views/admin/register.ejs',
+  'public/js/collaboration.js',
+  'public/css/collaboration.css',
   'package.json',
   'database/lab.db',
   'public/css/style.css',
@@ -31,7 +42,7 @@ async function main() {
     "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name"
   );
   const tableNames = new Set(tables.map(item => item.name));
-  const requiredTables = ['admins', 'alumni', 'banners', 'downloads', 'news', 'notices', 'projects', 'research_areas', 'settings', 'team_members'];
+  const requiredTables = ['submissions','auth_sessions','schema_migrations','admins', 'alumni', 'banners', 'downloads', 'news', 'notices', 'projects', 'research_areas', 'settings', 'team_members'];
   const missingTables = requiredTables.filter(name => !tableNames.has(name));
   if (missingTables.length) {
     throw new Error('数据库缺少数据表：' + missingTables.join(', '));

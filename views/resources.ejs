@@ -63,6 +63,7 @@
                 <div class="textbook-copy">
                   <h3><%= item.title %></h3>
                   <p><%= item.description %></p>
+                  <% if (item.file_url) { %><a class="dataset-btn" href="/download/<%= item.id %>">获取教材</a><% } %>
                 </div>
               </article>
             <% }); %>

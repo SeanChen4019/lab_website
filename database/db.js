@@ -2,8 +2,36 @@ const initSQL = require('sql.js');
 const fs = require('fs');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, 'lab.db');
+const DB_PATH = process.env.LAB_DB_PATH || path.join(__dirname, 'lab.db');
+function persist(database) {
+  const temp = DB_PATH + '.' + process.pid + '.tmp';
+  const fd = fs.openSync(temp, 'w', 0o600);
+  try { fs.writeFileSync(fd, Buffer.from(database.export())); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+  fs.renameSync(temp, DB_PATH);
+}
 
+let lockOwned=false;
+const LOCK_PATH=DB_PATH+'.lock';
+function releaseFileLock(){
+ if(!lockOwned)return;
+ try{if(JSON.parse(fs.readFileSync(LOCK_PATH,'utf8')).pid===process.pid)fs.unlinkSync(LOCK_PATH);}catch(_){}
+ lockOwned=false;
+}
+function acquireFileLock(){
+ if(lockOwned)return;
+ for(let attempt=0;attempt<2;attempt++){
+  try{const fd=fs.openSync(LOCK_PATH,'wx',0o600);fs.writeFileSync(fd,JSON.stringify({pid:process.pid}));fs.closeSync(fd);lockOwned=true;process.once('exit',releaseFileLock);return;}
+  catch(e){
+   if(e.code!=='EEXIST')throw e;
+   let owner;try{owner=JSON.parse(fs.readFileSync(LOCK_PATH,'utf8'));}catch(_){throw Error('数据库锁文件异常，请确认服务已停止后检查 '+LOCK_PATH);}
+   if(!Number.isInteger(owner.pid)||owner.pid<=0)throw Error('数据库锁无效');
+   let alive=true;try{process.kill(owner.pid,0);}catch(err){if(err.code==='ESRCH')alive=false;}
+   if(alive)throw Error('数据库已被另一个进程使用，请先停止旧服务');
+   fs.unlinkSync(LOCK_PATH);
+  }
+ }
+ throw Error('无法获取数据库锁');
+}
 let dbPromise = null;
 let db = null;
 
@@ -22,6 +50,7 @@ async function getDb() {
   dbPromise = (async () => {
     const SQL = await initSQL();
 
+    acquireFileLock();
     let fileBuffer;
     if (fs.existsSync(DB_PATH)) {
       fileBuffer = fs.readFileSync(DB_PATH);
@@ -175,7 +204,10 @@ async function getDb() {
     db.run("UPDATE team_members SET member_status = 'current' WHERE member_status IS NULL OR member_status = ''");
     db.run("UPDATE team_members SET resume = bio WHERE (resume IS NULL OR resume = '') AND bio IS NOT NULL");
 
-    // 旧毕业生资料无损并入学生个人主页；旧表继续保留作归档。
+    // Import legacy alumni once; deleting a profile must survive restarts.
+    db.run('CREATE TABLE IF NOT EXISTS schema_migrations (name TEXT PRIMARY KEY, applied_at TEXT DEFAULT CURRENT_TIMESTAMP)');
+    const imported = db.exec("SELECT name FROM schema_migrations WHERE name='legacy-alumni-v1'").length;
+    if (!imported) {
     db.run(`
       INSERT INTO team_members
         (name, title, role, photo_url, email, research_area, bio, sort_order, is_active,
@@ -197,18 +229,25 @@ async function getDb() {
         SELECT 1 FROM team_members t WHERE t.name = a.name AND t.member_type = 'student'
       )
     `);
-    fs.writeFileSync(DB_PATH, Buffer.from(db.export()));
+    db.run("INSERT INTO schema_migrations(name) VALUES ('legacy-alumni-v1')");
+    }
+    require('./access-migration')(db);
+    persist(db);
 
     return db;
-  })();
+  })().catch(error=>{
+    if(db){try{db.close();}catch(_){} db=null;}
+    releaseFileLock();dbPromise=null;throw error;
+  });
 
   return dbPromise;
 }
 
 // 查询单条记录
 async function get(sql, params = []) {
-  const database = await getDb();
+  await getDb();
   return withLock(() => {
+    const database = db;
     const stmt = database.prepare(sql);
     if (params.length > 0) {
       stmt.bind(params);
@@ -224,8 +263,9 @@ async function get(sql, params = []) {
 
 // 查询多条记录
 async function all(sql, params = []) {
-  const database = await getDb();
+  await getDb();
   return withLock(() => {
+    const database = db;
     const stmt = database.prepare(sql);
     if (params.length > 0) {
       stmt.bind(params);
@@ -241,25 +281,14 @@ async function all(sql, params = []) {
 
 // 执行SQL（插入、更新、删除）
 async function run(sql, params = []) {
-  const database = await getDb();
-  return withLock(() => {
-    database.run(sql, params);
-    const changes = database.getRowsModified();
-    const idStatement = database.prepare('SELECT last_insert_rowid() AS id');
-    let lastID = null;
-    if (idStatement.step()) lastID = idStatement.getAsObject().id;
-    idStatement.free();
-
-    // 每次写入后立即落盘，避免接口已返回成功但数据尚未保存。
-    fs.writeFileSync(DB_PATH, Buffer.from(database.export()));
-    return { changes, lastID };
-  });
+  return transaction(tx=>{require('../services/write-conflict').guard(tx,sql);return tx.run(sql,params);});
 }
 
 // 获取最后插入的ID
 async function lastInsertRowId() {
-  const database = await getDb();
+  await getDb();
   return withLock(() => {
+    const database = db;
     const stmt = database.prepare('SELECT last_insert_rowid() as id');
     let result = null;
     if (stmt.step()) {
@@ -270,7 +299,22 @@ async function lastInsertRowId() {
   });
 }
 
+// Synchronous work inside one queued transaction: no intermediate publication state.
+async function transaction(work) {
+  await getDb();
+  return withLock(() => {
+    const before = db.export();
+    const query = (sql, params=[]) => {
+      const s=db.prepare(sql); try { s.bind(params); const out=[]; while(s.step()) out.push(s.getAsObject()); return out; } finally { s.free(); }
+    };
+    const tx={ get:(sql,p)=>query(sql,p)[0] || null, all:query, run:(sql,p=[])=>{ db.run(sql,p); return {changes:db.getRowsModified(),lastID:query('SELECT last_insert_rowid() AS id')[0].id}; } };
+    db.run('BEGIN');
+    try { const result=work(tx); if(result && typeof result.then==='function') throw Error('Transaction callback must be synchronous'); db.run('COMMIT'); persist(db); return result; }
+    catch(error) { try { db.run('ROLLBACK'); } catch(_) {} const Database=db.constructor; db.close(); db=new Database(before); throw error; }
+  });
+}
 module.exports = {
+  transaction,
   getDb,
   get,
   all,

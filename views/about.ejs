@@ -14,8 +14,8 @@
         <h2><i class="fas fa-university"></i> 实验室简介</h2>
       </div>
       <div class="card-body" data-cms-type="page-content" data-cms-id="about-intro" data-cms-label="实验室简介">
-        <% if (siteSettings.page_content_about_intro) { %>
-          <%- siteSettings.page_content_about_intro %>
+        <% if ((siteSettings['page_content_about-intro'] ?? siteSettings.page_content_about_intro)) { %>
+          <%- (siteSettings['page_content_about-intro'] ?? siteSettings.page_content_about_intro) %>
         <% } else { %>
           <p>电磁频谱认知智能通信实验室成立于2016年，依托南京航空航天大学电子信息工程学院建设，面向天地一体化网络和电磁频谱空间的国家战略需求开展基础理论、关键技术、系统平台与人才培养工作。</p>
           <p>实验室围绕“一个核心、两个飞翼、四个特色”布局研究：以认知为核心，以电磁频谱空间与天地一体化网络为两个主要应用领域，将认知理论与航空、航天、民航、国防特色相结合。</p>
@@ -24,6 +24,10 @@
       </div>
     </div>
 
+    <% if (researchAreas.length) { %>
+    <section class="content-card" id="research-areas"><div class="card-header"><h2>研究方向</h2></div><div class="card-body"><div class="goals-grid">
+    <% researchAreas.forEach(function(area) { %><article class="goal-item" data-cms-type="research-area" data-cms-id="<%= area.id %>"><h3><%= area.title %></h3><p><%= area.description %></p></article><% }); %>
+    </div></div></section><% } %>
     <div class="content-card" id="leader">
       <div class="card-header">
         <h2><i class="fas fa-user-tie"></i> 实验室负责人</h2>
@@ -142,17 +146,17 @@
           <div class="contact-item">
             <i class="fas fa-map-marker-alt"></i>
             <h4>地址</h4>
-            <p>南京市江宁区将军大道29号<br>南京航空航天大学</p>
+            <p><%= siteSettings.contact_address || '南京市江宁区将军大道29号 南京航空航天大学' %></p>
           </div>
           <div class="contact-item">
             <i class="fas fa-envelope"></i>
             <h4>邮箱</h4>
-            <p>wuqihui@nuaa.edu.cn</p>
+            <p><%= siteSettings.contact_email || 'wuqihui@nuaa.edu.cn' %></p>
           </div>
           <div class="contact-item">
             <i class="fas fa-phone"></i>
             <h4>电话</h4>
-            <p>请通过学院或教师主页联系</p>
+            <p><%= siteSettings.contact_phone || '请通过学院或教师主页联系' %></p>
           </div>
           <div class="contact-item">
             <i class="fas fa-globe"></i>

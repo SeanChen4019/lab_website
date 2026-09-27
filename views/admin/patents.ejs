@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %> - 电磁频谱认知智能通信实验室</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="<%= assetUrl('/css/admin.css') %>">
 </head>
 <body>
   <div class="admin-layout">
@@ -137,8 +137,8 @@
     </div>
   </div>
 
-  <script src="/js/admin-editor.js"></script>
-  <script src="/js/admin-media.js"></script>
+  <script src="<%= assetUrl('/js/admin-editor.js') %>"></script>
+  <script src="<%= assetUrl('/js/admin-media.js') %>"></script>
   <script>
     const token = localStorage.getItem('token');
     let patents = [];
@@ -253,7 +253,7 @@
         const response = await fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({...payload,_revision:patents.find(row=>String(row.id)===String(id))?._revision})
         });
         const data = await response.json();
         if (data.success) {
@@ -273,7 +273,7 @@
       try {
         const response = await fetch(`/api/patents/${id}`, {
           method: 'DELETE',
-          headers: { 'Authorization': 'Bearer ' + token }
+          headers: { 'If-Match': patents.find(row=>String(row.id)===String(id))?._revision || '',  'Authorization': 'Bearer ' + token }
         });
         const data = await response.json();
         if (data.success) {

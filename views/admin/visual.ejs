@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %> - 电磁频谱认知智能通信实验室</title>
-  <link rel="stylesheet" href="/css/admin-visual.css">
+  <link rel="stylesheet" href="<%= assetUrl('/css/admin-visual.css') %>">
 </head>
 <body class="visual-cms" data-initial-page="<%= initialPage %>">
   <aside class="visual-rail">
@@ -100,6 +100,6 @@
   </aside>
 
   <div class="visual-toast" id="visualToast" role="status"></div>
-  <script src="/js/admin-visual.js"></script>
+  <script src="<%= assetUrl('/js/admin-visual.js') %>"></script>
 </body>
 </html>

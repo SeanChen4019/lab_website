@@ -1,0 +1,6 @@
+<%- include('partials/header') %>
+<section class="page-banner"><div class="container"><h1>实验室新闻</h1><p>科研进展与团队动态</p></div></section>
+<section class="page-content"><div class="container"><div class="news-card-grid">
+<% news.forEach(function(item) { %><a class="news-card" href="/news/<%= item.id %>"><div class="news-card-copy"><time><%= item.publish_date %></time><h3><%= item.title %></h3><p><%= item.summary %></p></div></a><% }); %>
+</div><% if(!news.length) { %><p>暂无新闻。</p><% } %><nav aria-label="新闻分页" style="display:flex;gap:24px;justify-content:center;padding:30px"><% if(page>1) { %><a href="/news?page=<%= page-1 %>">上一页</a><% } %><span>第 <%= page %> / <%= pages %> 页</span><% if(page<pages) { %><a href="/news?page=<%= page+1 %>">下一页</a><% } %></nav></div></section>
+<%- include('partials/footer') %>
