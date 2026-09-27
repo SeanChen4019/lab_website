@@ -307,6 +307,7 @@ router.use((req,res,next) => {
 });
 
 const writeConflict=require('../services/write-conflict');
+const pageItems=require('../services/page-items');
 const legacyTables={banners:'banners',news:'news',team:'team_members',alumni:'alumni',projects:'projects',downloads:'downloads',platforms:'platforms',patents:'patents',papers:'papers','social-posts':'social_posts'};
 router.use(async(req,res,next)=>{
  try {
@@ -1048,6 +1049,47 @@ router.delete('/social-posts/:id', authMiddleware, async (req, res) => {
 });
 
 // ============ 可视化页面文案 ============
+
+// ---- 结构化栏目内容（研究目标 / 发展历程）----
+// 前台是固定版式（卡片网格 / 时间轴），富文本编辑器排不出来（class 会被清洗掉），
+// 所以改成「填条目」，版式由模板保证。
+router.get('/page-items/:key', authMiddleware, async (req, res) => {
+  try {
+    const key = String(req.params.key || '');
+    if (!pageItems.isKey(key)) return res.status(404).json({ success: false, message: '栏目不存在' });
+    const row = await db.get('SELECT value FROM settings WHERE key = ?', ['page_items_' + key]);
+    const saved = pageItems.read(row ? row.value : '');
+    res.json({
+      success: true,
+      items: saved || pageItems.defaults(key),
+      custom: !!saved,
+      meta: pageItems.meta(key),
+      _revision: writeConflict.revision({ value: row?.value || '' })
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取失败' });
+  }
+});
+
+router.put('/page-items/:key', authMiddleware, async (req, res) => {
+  try {
+    const key = String(req.params.key || '');
+    if (!pageItems.isKey(key)) return res.status(404).json({ success: false, message: '栏目不存在' });
+    const items = pageItems.normalize(key, req.body.items);
+    await db.transaction(tx => {
+      const row = tx.get('SELECT value FROM settings WHERE key=?', ['page_items_' + key]);
+      if (req.body._revision && req.body._revision !== writeConflict.revision({ value: row?.value || '' })) {
+        throw Object.assign(new Error('内容已被其他管理员修改，请刷新后重试'), { status: 409 });
+      }
+      if (items === null) tx.run('DELETE FROM settings WHERE key=?', ['page_items_' + key]);
+      else tx.run('INSERT OR REPLACE INTO settings (key,value,updated_at) VALUES (?,?,CURRENT_TIMESTAMP)',
+        ['page_items_' + key, JSON.stringify(items)]);
+    });
+    res.json({ success: true, message: items === null ? '已恢复默认内容' : '已保存' });
+  } catch (error) {
+    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '保存失败' });
+  }
+});
 
 router.get('/page-content/:key', authMiddleware, async (req, res) => {
   try {

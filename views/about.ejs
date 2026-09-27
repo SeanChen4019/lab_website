@@ -76,33 +76,16 @@
       <div class="card-header">
         <h2><i class="fas fa-bullseye"></i> 研究目标</h2>
       </div>
-      <div class="card-body" data-cms-type="page-content" data-cms-id="about-goals" data-cms-label="研究目标">
-        <% if (siteSettings['page_content_about-goals']) { %>
-          <%- siteSettings['page_content_about-goals'] %>
-        <% } else { %>
+      <div class="card-body">
         <div class="goals-grid">
-          <div class="goal-item">
-            <div class="goal-icon"><i class="fas fa-satellite"></i></div>
-              <h3>一个核心</h3>
-              <p>以认知与决策信息理论为核心，研究智能信息获取、学习与决策</p>
-          </div>
-          <div class="goal-item">
-            <div class="goal-icon"><i class="fas fa-brain"></i></div>
-              <h3>天地一体化网络</h3>
-              <p>研究卫星、航空平台、临近空间和地面网络的多层协同</p>
-          </div>
-          <div class="goal-item">
-            <div class="goal-icon"><i class="fas fa-shield-alt"></i></div>
-              <h3>电磁频谱空间</h3>
-              <p>研究频谱感知、共享、动态授权、优化利用与安全管控</p>
-          </div>
-          <div class="goal-item">
-            <div class="goal-icon"><i class="fas fa-cogs"></i></div>
-              <h3>四个特色</h3>
-              <p>服务航空、航天、民航、国防，推动理论研究与重大需求结合</p>
-          </div>
+          <% goalItems.forEach(function(item) { %>
+            <div class="goal-item">
+              <div class="goal-icon"><i class="fas <%= item.icon %>"></i></div>
+              <h3><%= item.title %></h3>
+              <p><%= item.desc %></p>
+            </div>
+          <% }); %>
         </div>
-        <% } %>
       </div>
     </div>
 
@@ -110,34 +93,18 @@
       <div class="card-header">
         <h2><i class="fas fa-history"></i> 发展历程</h2>
       </div>
-      <div class="card-body" data-cms-type="page-content" data-cms-id="about-history" data-cms-label="发展历程">
-        <% if (siteSettings['page_content_about-history']) { %>
-          <%- siteSettings['page_content_about-history'] %>
-        <% } else { %>
+      <div class="card-body">
         <div class="history-track">
-          <div class="history-event">
-            <div class="history-year">2016</div>
-            <div class="history-copy">
-              <h4>实验室成立</h4>
-              <p>电磁频谱认知智能通信实验室正式成立</p>
+          <% historyItems.forEach(function(item) { %>
+            <div class="history-event">
+              <div class="history-year"><%= item.year %></div>
+              <div class="history-copy">
+                <h4><%= item.title %></h4>
+                <p><%= item.desc %></p>
+              </div>
             </div>
-          </div>
-          <div class="history-event">
-            <div class="history-year">2022</div>
-            <div class="history-copy">
-              <h4>入选百强创新团队</h4>
-              <p>团队入选南京航空航天大学首批百强创新团队</p>
-            </div>
-          </div>
-          <div class="history-event">
-            <div class="history-year">2026</div>
-            <div class="history-copy">
-              <h4>面向低空与天地一体化持续创新</h4>
-              <p>围绕低空智能通信、电磁频谱管控和空天信息技术持续开展科研与合作</p>
-            </div>
-          </div>
+          <% }); %>
         </div>
-        <% } %>
       </div>
     </div>
 

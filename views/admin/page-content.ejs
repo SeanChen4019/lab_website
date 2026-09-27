@@ -6,6 +6,18 @@
   <title><%= title %> - 电磁频谱认知智能通信实验室</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="<%= assetUrl('/css/admin.css') %>">
+  <style>
+    .pc-item { border:1px solid #e5e5ea; border-radius:10px; padding:16px; margin-bottom:12px; background:#fafafa; }
+    .pc-item-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .pc-item-head b { font-size:14px; color:#1d1d1f; }
+    .pc-field { margin-bottom:10px; }
+    .pc-field label { display:block; font-size:12px; color:#6e6e73; margin-bottom:5px; }
+    .pc-field input, .pc-field textarea { width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid #d2d2d7; border-radius:6px; font-size:14px; font-family:inherit; }
+    .pc-field textarea { min-height:64px; resize:vertical; }
+    .pc-hint { font-size:11px; color:#86868b; margin-top:4px; }
+    .pc-tools { display:flex; gap:10px; align-items:center; margin-top:14px; flex-wrap:wrap; }
+    .pc-msg { font-size:13px; }
+  </style>
 </head>
 <body>
   <div class="admin-layout">
@@ -27,39 +39,48 @@
       </header>
 
       <div class="admin-content">
-        <div class="table-container" style="margin-bottom:22px">
-          <div style="padding:18px 20px;line-height:1.8">
-            <p style="margin:0 0 8px"><strong>这里放的是前台页面上「写死的栏目文字」</strong>——以前只能改代码，现在可以直接改。</p>
-            <p style="margin:0;color:#6e6e73;font-size:13px">
-              改完点「保存」，前台立刻生效。<strong>把内容清空，就会恢复成原来的默认文字</strong>（不会变成空白）。
-              需要图文混排就用编辑器工具栏插图片。
-            </p>
-          </div>
-        </div>
 
-        <% blocks.forEach(function (block) { %>
+        <% itemBlocks.forEach(function (block) { %>
         <div class="table-container" style="margin-bottom:22px">
           <div class="table-header">
-            <h2><i class="fas fa-paragraph"></i> <%= block.label %></h2>
+            <h2><i class="fas fa-list"></i> <%= block.label %></h2>
             <span style="color:#6e6e73;font-size:13px">
-              所在页面：<%= block.page %>
-              <% if (block.filled) { %><span style="color:#34c759">· 已自定义</span><% } else { %><span>· 使用默认文字</span><% } %>
+              <%= block.page %> · <%= block.layout %>
+              <span data-state="<%= block.key %>"><%= block.custom ? '· 已自定义' : '· 使用默认内容' %></span>
             </span>
           </div>
           <div style="padding:20px">
-            <textarea id="pc-<%= block.key %>" style="min-height:170px" placeholder="留空则显示页面原有的默认文字"></textarea>
-            <div style="margin-top:14px;display:flex;gap:12px;align-items:center">
-              <button class="btn btn-primary" data-save="<%= block.key %>">
-                <i class="fas fa-save"></i> 保存
-              </button>
-              <button class="btn" data-reset="<%= block.key %>">
-                <i class="fas fa-undo"></i> 恢复默认文字
-              </button>
-              <span data-msg="<%= block.key %>" style="font-size:13px;color:#34c759"></span>
+            <div data-list="<%= block.key %>"></div>
+            <div class="pc-tools">
+              <button class="btn" data-add="<%= block.key %>"><i class="fas fa-plus"></i> 添加一条</button>
+              <button class="btn btn-primary" data-save="<%= block.key %>"><i class="fas fa-save"></i> 保存</button>
+              <button class="btn" data-reset="<%= block.key %>"><i class="fas fa-undo"></i> 恢复默认内容</button>
+              <span class="pc-msg" data-msg="<%= block.key %>"></span>
             </div>
           </div>
         </div>
         <% }); %>
+
+        <% richBlocks.forEach(function (block) { %>
+        <div class="table-container" style="margin-bottom:22px">
+          <div class="table-header">
+            <h2><i class="fas fa-paragraph"></i> <%= block.label %></h2>
+            <span style="color:#6e6e73;font-size:13px">
+              <%= block.page %>
+              <span data-state="<%= block.key %>"><%= block.filled ? '· 已自定义' : '· 使用默认文字' %></span>
+            </span>
+          </div>
+          <div style="padding:20px">
+            <textarea id="pc-<%= block.key %>" style="min-height:170px" placeholder="留空则显示页面原有的默认文字"></textarea>
+            <div class="pc-tools">
+              <button class="btn btn-primary" data-save-rich="<%= block.key %>"><i class="fas fa-save"></i> 保存</button>
+              <button class="btn" data-reset-rich="<%= block.key %>"><i class="fas fa-undo"></i> 恢复默认文字</button>
+              <span class="pc-msg" data-msg="<%= block.key %>"></span>
+            </div>
+          </div>
+        </div>
+        <% }); %>
+
       </div>
     </main>
   </div>
@@ -67,14 +88,13 @@
   <script src="<%= assetUrl('/js/admin-safe.js') %>"></script>
   <script src="<%= assetUrl('/js/admin-editor.js') %>"></script>
   <script>
-    const KEYS = <%- JSON.stringify(blocks.map(b => b.key)) %>;
+    const ITEM_BLOCKS = <%- JSON.stringify(itemBlocks) %>;
+    const RICH_BLOCKS = <%- JSON.stringify(richBlocks.map(b => ({ key: b.key, label: b.label }))) %>;
     let token = localStorage.getItem('token') || '';
     const editors = {};
+    const cache = {};
 
-    function logout() {
-      localStorage.removeItem('token');
-      location.href = '/admin/login';
-    }
+    function logout() { localStorage.removeItem('token'); location.href = '/admin/login'; }
 
     async function api(path, method, body) {
       const res = await fetch('/api' + path, {
@@ -93,50 +113,160 @@
       el.textContent = text;
       el.style.color = color || '#34c759';
       clearTimeout(el._t);
-      el._t = setTimeout(() => { el.textContent = ''; }, 2600);
+      el._t = setTimeout(() => { el.textContent = ''; }, 3000);
     }
 
-    async function load() {
-      for (const key of KEYS) {
-        const box = document.getElementById('pc-' + key);
+    function setState(key, custom) {
+      const el = document.querySelector('[data-state="' + key + '"]');
+      if (el) el.textContent = custom ? '· 已自定义' : '· 使用默认内容';
+    }
+
+    function esc(v) {
+      return String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    }
+
+    function itemRow(key, index, item, fields) {
+      const body = fields.map(f => {
+        const value = esc(item[f.key] || '');
+        const control = f.type === 'textarea'
+          ? '<textarea data-field="' + f.key + '">' + value + '</textarea>'
+          : '<input type="text" data-field="' + f.key + '" value="' + value + '">';
+        const hint = f.hint ? '<div class="pc-hint">' + esc(f.hint) + '</div>' : '';
+        return '<div class="pc-field"><label>' + esc(f.label) + (f.required ? ' *' : '') + '</label>' + control + hint + '</div>';
+      }).join('');
+      return '<div class="pc-item" data-item="' + key + '">' +
+        '<div class="pc-item-head"><b>第 ' + (index + 1) + ' 条</b>' +
+        '<button class="btn" data-del="' + key + '" data-index="' + index + '"><i class="fas fa-trash"></i> 删除</button></div>' +
+        body + '</div>';
+    }
+
+    function renderList(key) {
+      const block = ITEM_BLOCKS.find(b => b.key === key);
+      const box = document.querySelector('[data-list="' + key + '"]');
+      const items = cache[key] || [];
+      box.innerHTML = items.length
+        ? items.map((item, i) => itemRow(key, i, item, block.fields)).join('')
+        : '<p style="color:#6e6e73;font-size:13px;margin:0">暂无条目，点下面「添加一条」。</p>';
+    }
+
+    function collect(key) {
+      const block = ITEM_BLOCKS.find(b => b.key === key);
+      return Array.from(document.querySelectorAll('[data-item="' + key + '"]')).map(row => {
+        const out = {};
+        block.fields.forEach(f => {
+          const el = row.querySelector('[data-field="' + f.key + '"]');
+          out[f.key] = el ? el.value : '';
+        });
+        return out;
+      });
+    }
+
+    function bindLists() {
+      document.querySelectorAll('[data-add]').forEach(btn => {
+        if (btn._bound) return; btn._bound = true;
+        btn.addEventListener('click', () => {
+          const key = btn.dataset.add;
+          cache[key] = collect(key);
+          cache[key].push({});
+          renderList(key);
+          bindLists();
+        });
+      });
+      document.querySelectorAll('[data-del]').forEach(btn => {
+        if (btn._bound) return; btn._bound = true;
+        btn.addEventListener('click', () => {
+          const key = btn.dataset.del;
+          const index = Number(btn.dataset.index);
+          cache[key] = collect(key);
+          cache[key].splice(index, 1);
+          renderList(key);
+          bindLists();
+        });
+      });
+      document.querySelectorAll('[data-save]').forEach(btn => {
+        if (btn._bound) return; btn._bound = true;
+        btn.addEventListener('click', async () => {
+          const key = btn.dataset.save;
+          btn.disabled = true;
+          try {
+            await api('/page-items/' + key, 'PUT', { items: collect(key) });
+            cache[key] = collect(key);
+            setState(key, true);
+            msg(key, '✓ 已保存，前台立即生效');
+          } catch (e) {
+            msg(key, '✗ ' + e.message, '#ff3b30');
+          } finally { btn.disabled = false; }
+        });
+      });
+      document.querySelectorAll('[data-reset]').forEach(btn => {
+        if (btn._bound) return; btn._bound = true;
+        btn.addEventListener('click', async () => {
+          const key = btn.dataset.reset;
+          if (!confirm('恢复成页面原有的默认内容？当前修改会丢失。')) return;
+          try {
+            await api('/page-items/' + key, 'PUT', { items: [] });
+            const data = await api('/page-items/' + key, 'GET');
+            cache[key] = data.items || [];
+            renderList(key);
+            bindLists();
+            setState(key, false);
+            msg(key, '✓ 已恢复默认内容');
+          } catch (e) {
+            msg(key, '✗ ' + e.message, '#ff3b30');
+          }
+        });
+      });
+    }
+
+    async function loadItems() {
+      for (const block of ITEM_BLOCKS) {
         try {
-          const data = await api('/page-content/' + key, 'GET');
-          box.value = data.content || '';
+          const data = await api('/page-items/' + block.key, 'GET');
+          cache[block.key] = data.items || [];
         } catch (e) {
-          box.value = '';
+          cache[block.key] = [];
         }
-        editors[key] = new RichPublisher('pc-' + key, { token: () => token });
+        renderList(block.key);
       }
+      bindLists();
     }
 
-    async function save(key) {
-      const btn = document.querySelector('[data-save="' + key + '"]');
-      btn.disabled = true;
-      try {
-        await api('/page-content/' + key, 'PUT', { content: document.getElementById('pc-' + key).value });
-        msg(key, '✓ 已保存，前台立即生效');
-      } catch (e) {
-        msg(key, '✗ ' + e.message, '#ff3b30');
-      } finally {
-        btn.disabled = false;
+    async function loadRich() {
+      for (const block of RICH_BLOCKS) {
+        const box = document.getElementById('pc-' + block.key);
+        try {
+          const data = await api('/page-content/' + block.key, 'GET');
+          box.value = data.content || '';
+        } catch (e) { box.value = ''; }
+        editors[block.key] = new RichPublisher('pc-' + block.key, { token: () => token });
       }
+      document.querySelectorAll('[data-save-rich]').forEach(btn => btn.addEventListener('click', async () => {
+        const key = btn.dataset.saveRich;
+        btn.disabled = true;
+        try {
+          await api('/page-content/' + key, 'PUT', { content: document.getElementById('pc-' + key).value });
+          setState(key, true);
+          msg(key, '✓ 已保存，前台立即生效');
+        } catch (e) {
+          msg(key, '✗ ' + e.message, '#ff3b30');
+        } finally { btn.disabled = false; }
+      }));
+      document.querySelectorAll('[data-reset-rich]').forEach(btn => btn.addEventListener('click', async () => {
+        const key = btn.dataset.resetRich;
+        if (!confirm('恢复成页面原有的默认文字？')) return;
+        try {
+          await api('/page-content/' + key, 'PUT', { content: '' });
+          document.getElementById('pc-' + key).value = '';
+          setState(key, false);
+          msg(key, '✓ 已恢复默认文字');
+        } catch (e) {
+          msg(key, '✗ ' + e.message, '#ff3b30');
+        }
+      }));
     }
 
-    async function reset(key) {
-      if (!confirm('恢复成页面原有的默认文字？当前自定义内容会被清空。')) return;
-      try {
-        await api('/page-content/' + key, 'PUT', { content: '' });
-        document.getElementById('pc-' + key).value = '';
-        msg(key, '✓ 已恢复默认文字');
-      } catch (e) {
-        msg(key, '✗ ' + e.message, '#ff3b30');
-      }
-    }
-
-    document.querySelectorAll('[data-save]').forEach(b => b.addEventListener('click', () => save(b.dataset.save)));
-    document.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', () => reset(b.dataset.reset)));
-
-    load();
+    loadItems();
+    loadRich();
   </script>
 </body>
 </html>

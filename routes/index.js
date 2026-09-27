@@ -1,4 +1,5 @@
 const express = require('express');
+const pageItems = require('../services/page-items');
 const router = express.Router();
 const db = require('../database/db');
 const { searchSite } = require('../services/site-search');
@@ -91,7 +92,13 @@ router.get('/about', async (req, res) => {
        WHERE member_type = 'teacher' AND role = 'leader' AND is_active = 1
        ORDER BY sort_order ASC, id ASC`
     );
-    res.render('about', { title: '实验室概况', leader, leaderTeam });
+    // 研究目标 / 发展历程：前台是固定版式，内容走结构化条目（没自定义就用默认）
+    const itemRows = await db.all("SELECT key, value FROM settings WHERE key LIKE 'page_items_%'");
+    const storedItems = {};
+    itemRows.forEach(row => { storedItems[row.key] = row.value; });
+    const goalItems = pageItems.read(storedItems['page_items_about-goals']) || pageItems.defaults('about-goals');
+    const historyItems = pageItems.read(storedItems['page_items_about-history']) || pageItems.defaults('about-history');
+    res.render('about', { title: '实验室概况', leader, leaderTeam, goalItems, historyItems });
   } catch (error) {
     console.error(error);
     res.status(500).render('error', { title: '错误', message: '页面加载失败', code: 500 });
