@@ -1453,3 +1453,31 @@ body,
   background-position: center 48% !important;
   background-repeat: no-repeat !important;
 }
+
+/* ==========================================================================
+   第十七部分 · 三处显示修复
+   ========================================================================== */
+
+/* ① 个人主页的名字必须是白色
+   根因跟首页 hero 当年一模一样：theme.css:137 的
+   `h1,h2,h3,h4 { color:#1d1d1f !important }` 把标题压成了近黑色，
+   而个人主页的 .member-profile-hero 是深蓝渐变底，名字「吴启晖」几乎看不见。
+   实测：颜色 rgb(29,29,31)，背景 linear-gradient(110deg, rgba(5,27,54,.97), …)。 */
+.member-profile-hero h1,
+.member-profile-hero h2,
+.member-profile-hero h3 { color: #ffffff !important; }
+
+/* ② 研究目标的卡片内容居中
+   refinement.css:168 的 `.is-inner .about-page .goal-item { text-align:left }`
+   把 style.css:650 原本的 `text-align:center` 覆盖掉了，
+   所以「一个核心」等标题贴左、跟上面居中的序号「01」不齐。 */
+.about-page .goal-item,
+.about-page .goal-item h3,
+.about-page .goal-item p { text-align: center !important; }
+
+/* ③ 页头副标题「南京航空航天大学电子信息工程学院」首页与内页字号不一
+   实测：首页 10px / 内页 9px（style.css:2173 vs 2001），肉眼能看出大小差。
+   字距和颜色两边本来就一致（都来自 theme.css:159 的 letter-spacing:.06em 与
+   color:#86868b），所以这里**只改字号**，不要动另外两个属性 ——
+   否则会出现「首页 0.6px / 内页 0.35px」这种新的不一致。 */
+.is-inner .brand-copy small { font-size: 10px !important; }
