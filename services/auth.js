@@ -21,5 +21,5 @@ async function apiAuth(req,res,next) {
   try { req.user=await verify(bearer(req)); next(); }
   catch(_) { res.status(401).json({success:false,message:'登录已过期或账号不可用，请重新登录'}); }
 }
-function superOnly(req,res,next) { if(req.user.role!=='superadmin') return res.status(403).json({success:false,message:'仅超级管理员可以执行此操作'}); next(); }
+function superOnly(req,res,next) { if(req.user.role!=='superadmin') return res.status(403).json({success:false,message:'仅系统管理员可以执行此操作'}); next(); }
 module.exports={issue,verify,bearer,apiAuth,superOnly};

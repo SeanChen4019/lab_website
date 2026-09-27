@@ -230,7 +230,7 @@ router.post('/auth/login', rateLimitLogin, async (req, res) => {
       return res.status(401).json({ success: false, message: '用户名或密码错误' });
     }
 
-    if (admin.status !== 'active') return res.status(403).json({success:false,message:admin.status==='pending'?'账号等待超级管理员审核':'账号已停用，请联系超级管理员'});
+    if (admin.status !== 'active') return res.status(403).json({success:false,message:admin.status==='pending'?'账号等待系统管理员审核':'账号已停用，请联系系统管理员'});
     loginAttempts.delete(ip);
     const token = await auth.issue(admin);
     await new Promise((resolve,reject)=>req.session.regenerate(e=>e?reject(e):resolve()));

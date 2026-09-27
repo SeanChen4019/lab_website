@@ -17,7 +17,7 @@ router.post('/auth/register',wrap(async(req,res)=>{
  if(typeof application_note!=='string'||application_note.length>1000)throw error('申请说明最多1000字');
  const hash=await bcrypt.hash(password(req.body.password),12);
  await db.transaction(tx=>{if(tx.get('SELECT id FROM admins WHERE username=? COLLATE NOCASE',[username]))throw error('用户名已存在',409);tx.run("INSERT INTO admins(username,password,name,email,application_note,role,status) VALUES (?,?,?,?,?,'editor','pending')",[username,hash,name.trim(),email.trim(),application_note.trim()]);});
- res.status(201).json({success:true,message:'申请已提交，请等待超级管理员审核开通。审核前不能登录。'});
+ res.status(201).json({success:true,message:'申请已提交，请等待系统管理员审核开通。审核前不能登录。'});
 }));
 router.use(['/contributions','/accounts','/reviews'],auth.apiAuth);
 router.use(['/accounts','/reviews'],auth.superOnly);
@@ -48,15 +48,33 @@ router.put('/contributions/:id',wrap(async(req,res)=>{
  });ok(res,{message:'已保存'});
 }));
 router.delete('/contributions/:id',wrap(async(req,res)=>{
- await db.transaction(tx=>{const s=tx.get('SELECT * FROM submissions WHERE id=?',[id(req.params.id)]);if(!s||s.owner_id!==req.user.id)throw error('记录不存在',404);if(s.status==='approved')throw error('已发布内容请联系超级管理员删除',409);tx.run('DELETE FROM submissions WHERE id=?',[s.id]);});ok(res);
+ await db.transaction(tx=>{const s=tx.get('SELECT * FROM submissions WHERE id=?',[id(req.params.id)]);if(!s||s.owner_id!==req.user.id)throw error('记录不存在',404);if(s.status==='approved')throw error('已发布内容请联系系统管理员删除',409);tx.run('DELETE FROM submissions WHERE id=?',[s.id]);});ok(res);
 }));
 router.get('/accounts',wrap(async(req,res)=>ok(res,{users:await db.all('SELECT id,username,name,email,role,status,application_note,created_at FROM admins ORDER BY id DESC')})));
 router.put('/accounts/:id',wrap(async(req,res)=>{
  const target=id(req.params.id),status=req.body.status;if(!['active','disabled','pending'].includes(status))throw error('账号状态不正确');
- await db.transaction(tx=>{const user=tx.get('SELECT * FROM admins WHERE id=?',[target]);if(!user)throw error('账号不存在',404);if(user.role==='superadmin')throw error('此入口不能停用或修改超级管理员',403);tx.run('UPDATE admins SET status=?,token_version=token_version+1 WHERE id=?',[status,target]);tx.run('DELETE FROM auth_sessions WHERE admin_id=?',[target]);});ok(res);
+ await db.transaction(tx=>{const user=tx.get('SELECT * FROM admins WHERE id=?',[target]);if(!user)throw error('账号不存在',404);if(user.role==='superadmin')throw error('此入口不能停用或修改系统管理员',403);tx.run('UPDATE admins SET status=?,token_version=token_version+1 WHERE id=?',[status,target]);tx.run('DELETE FROM auth_sessions WHERE admin_id=?',[target]);});ok(res);
 }));
 router.post('/accounts/:id/reset-password',wrap(async(req,res)=>{
- const hash=await bcrypt.hash(password(req.body.password),12);await db.transaction(tx=>{const user=tx.get('SELECT id,role FROM admins WHERE id=?',[id(req.params.id)]);if(!user)throw error('账号不存在',404);if(user.role==='superadmin')throw error('请在账号安全中修改超级管理员密码',403);tx.run('UPDATE admins SET password=?,token_version=token_version+1 WHERE id=?',[hash,user.id]);tx.run('DELETE FROM auth_sessions WHERE admin_id=?',[user.id]);});ok(res,{message:'密码已重置，旧登录已失效'});
+ const hash=await bcrypt.hash(password(req.body.password),12);await db.transaction(tx=>{const user=tx.get('SELECT id,role FROM admins WHERE id=?',[id(req.params.id)]);if(!user)throw error('账号不存在',404);if(user.role==='superadmin')throw error('请在账号安全中修改系统管理员密码',403);tx.run('UPDATE admins SET password=?,token_version=token_version+1 WHERE id=?',[hash,user.id]);tx.run('DELETE FROM auth_sessions WHERE admin_id=?',[user.id]);});ok(res,{message:'密码已重置，旧登录已失效'});
+}));
+
+// 删除普通管理员账号：资料收回、草稿清空、会话失效，然后删账号
+router.delete('/accounts/:id',wrap(async(req,res)=>{
+ const target=id(req.params.id);
+ const owned=['team_members','news','notices','papers','projects','patents','downloads'];
+ await db.transaction(tx=>{
+   const user=tx.get('SELECT * FROM admins WHERE id=?',[target]);
+   if(!user)throw error('账号不存在',404);
+   if(user.role==='superadmin')throw error('不能删除系统管理员账号',403);
+   // 名下的已发布资料收回归系统管理员（owner_id 置空即「仅系统管理员维护」）
+   for(const table of owned)tx.run(`UPDATE ${table} SET owner_id=NULL WHERE owner_id=?`,[target]);
+   // 未审草稿、待审提交、登录会话一并清掉，避免留下悬空记录
+   tx.run('DELETE FROM submissions WHERE owner_id=?',[target]);
+   tx.run('DELETE FROM auth_sessions WHERE admin_id=?',[target]);
+   tx.run('DELETE FROM admins WHERE id=?',[target]);
+ });
+ ok(res,{message:'账号已删除，原资料已收归系统管理员管理'});
 }));
 router.get('/accounts/content/:type',wrap(async(req,res)=>{
  const cfg=Object.hasOwn(configs,req.params.type)?configs[req.params.type]:null;if(!cfg)throw error('内容类型不正确');ok(res,{records:await db.all(`SELECT id,${req.params.type==='team'?'name':'title'} AS title,owner_id FROM ${cfg.table} ORDER BY id DESC`)});
@@ -66,7 +84,7 @@ router.put('/accounts/content/:type/:id',wrap(async(req,res)=>{
  await db.transaction(tx=>{if(owner){const user=tx.get("SELECT id FROM admins WHERE id=? AND status='active'",[owner]);if(!user)throw error('请选择已开通的账号');}
  const row=tx.get(`SELECT id FROM ${cfg.table} WHERE id=?`,[id(req.params.id)]);if(!row)throw error('内容不存在',404);
  tx.run(`UPDATE ${cfg.table} SET owner_id=? WHERE id=?`,[owner,row.id]);
- tx.run("UPDATE submissions SET status='rejected',review_note='资料归属已改变，请联系超级管理员',version=version+1 WHERE type=? AND target_id=? AND status='pending'",[req.params.type,row.id]);});ok(res);
+ tx.run("UPDATE submissions SET status='rejected',review_note='资料归属已改变，请联系系统管理员',version=version+1 WHERE type=? AND target_id=? AND status='pending'",[req.params.type,row.id]);});ok(res);
 }));
 router.get('/reviews',wrap(async(req,res)=>{
  const list=await db.all("SELECT s.*,a.name AS owner_name,a.username,a.status AS account_status FROM submissions s JOIN admins a ON a.id=s.owner_id WHERE s.status!='draft' ORDER BY CASE s.status WHEN 'pending' THEN 0 ELSE 1 END,s.id DESC");
