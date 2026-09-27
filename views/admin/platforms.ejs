@@ -71,6 +71,14 @@
             <textarea id="platformDesc" rows="4"></textarea>
           </div>
           <div class="form-group">
+            <label>平台简介（详情页显示，可图文混排）</label>
+            <textarea id="platformContent" rows="6"></textarea>
+          </div>
+          <div class="form-group">
+            <label>平台进展（详情页显示，可图文混排）</label>
+            <textarea id="platformProgress" rows="6"></textarea>
+          </div>
+          <div class="form-group">
             <label>配图地址（可留空，如 /uploads/xxx.png）</label>
             <input type="text" id="platformImage">
           </div>
@@ -96,6 +104,7 @@
     </div>
   </div>
 
+  <script src="<%= assetUrl('/js/admin-editor.js') %>"></script>
   <script>
     const token = localStorage.getItem('token');
     let platforms = [];
@@ -138,6 +147,8 @@
       document.getElementById('platformLevel').value = 'national';
       document.getElementById('platformName').value = '';
       document.getElementById('platformDesc').value = '';
+      document.getElementById('platformContent').value = '';
+      document.getElementById('platformProgress').value = '';
       document.getElementById('platformImage').value = '';
       document.getElementById('platformSort').value = '0';
       document.getElementById('platformActive').value = '1';
@@ -152,6 +163,8 @@
       document.getElementById('platformLevel').value = p.level;
       document.getElementById('platformName').value = p.name;
       document.getElementById('platformDesc').value = p.description || '';
+      document.getElementById('platformContent').value = p.content || '';
+      document.getElementById('platformProgress').value = p.progress || '';
       document.getElementById('platformImage').value = p.image_url || '';
       document.getElementById('platformSort').value = p.sort_order || 0;
       document.getElementById('platformActive').value = p.is_active;
@@ -168,6 +181,8 @@
         level: document.getElementById('platformLevel').value,
         name: document.getElementById('platformName').value,
         description: document.getElementById('platformDesc').value,
+        content: document.getElementById('platformContent').value,
+        progress: document.getElementById('platformProgress').value,
         image_url: document.getElementById('platformImage').value,
         sort_order: parseInt(document.getElementById('platformSort').value) || 0,
         is_active: parseInt(document.getElementById('platformActive').value)
@@ -183,7 +198,10 @@
         const data = await response.json();
         if (data.success) {
           closeModal();
-          loadPlatforms();
+          const platformContentEditor = new RichPublisher('platformContent', { token: () => token });
+    const platformProgressEditor = new RichPublisher('platformProgress', { token: () => token });
+
+    loadPlatforms();
           alert(id ? '更新成功' : '添加成功');
         } else {
           alert(data.message || '操作失败');

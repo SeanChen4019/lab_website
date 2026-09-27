@@ -168,6 +168,12 @@ async function getDb() {
       cover_image: "TEXT DEFAULT ''"
     });
 
+    // 平台详情页需要的字段（原来只有名称/级别/一句话说明，点进去没内容可看）
+    ensureColumns('platforms', {
+      content: "TEXT DEFAULT ''",   // 平台简介（富文本）
+      progress: "TEXT DEFAULT ''"   // 平台进展（富文本）
+    });
+
     db.run(`
       CREATE TABLE IF NOT EXISTS social_posts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

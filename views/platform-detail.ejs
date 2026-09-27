@@ -1,0 +1,95 @@
+<%- include('partials/header') %>
+
+<%
+  const levelLabel = platform.level === 'provincial' ? '省部级平台' : '国家级平台';
+  const others = (related || []).filter(item => item.id !== platform.id).slice(0, 4);
+%>
+
+<section class="page-banner">
+  <div class="container">
+    <h1>平台详情</h1>
+    <p><%= levelLabel %></p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container">
+    <div class="content-card">
+      <div class="card-body">
+        <header class="detail-head">
+          <div class="ach-tags">
+            <span class="ach-tag is-status"><%= levelLabel %></span>
+            <% if (platform.sort_order) { %>
+              <span class="ach-tag is-direction">排序 <%= platform.sort_order %></span>
+            <% } %>
+          </div>
+
+          <h1><%= platform.name %></h1>
+
+          <% if (platform.description) { %>
+            <p class="detail-meta"><span><i class="fas fa-align-left"></i><%= platform.description %></span></p>
+          <% } %>
+        </header>
+
+        <% if (platform.image_url) { %>
+          <figure class="detail-cover">
+            <img src="<%= platform.image_url %>" alt="<%= platform.name %>">
+          </figure>
+        <% } %>
+
+        <% if (platform.content) { %>
+          <section class="detail-abstract">
+            <h2>Platform profile · 平台简介</h2>
+            <div class="detail-body"><%- platform.content %></div>
+          </section>
+        <% } else if (!platform.progress) { %>
+          <section class="detail-abstract">
+            <h2>Platform profile · 平台简介</h2>
+            <p>暂未填写平台简介。</p>
+          </section>
+        <% } %>
+
+        <% if (platform.progress) { %>
+          <section class="detail-body">
+            <h2>Progress · 平台进展</h2>
+            <%- platform.progress %>
+          </section>
+        <% } %>
+
+        <div class="detail-related">
+          <a class="leader-btn" href="/platforms">← 返回平台列表</a>
+        </div>
+      </div>
+    </div>
+
+    <% if (others.length) { %>
+    <div class="content-card">
+      <div class="card-header">
+        <h2><i class="fas fa-layer-group"></i> 其他平台</h2>
+      </div>
+      <div class="card-body">
+        <div class="goals-grid">
+          <% others.forEach(function(item) { %>
+            <article class="goal-item">
+              <h3><a href="/platform/<%= item.id %>"><%= item.name %></a></h3>
+              <p><%= item.level === 'provincial' ? '省部级平台' : '国家级平台' %></p>
+            </article>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+    <% } %>
+  </div>
+</section>
+
+<script type="application/ld+json">
+<%- JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'ResearchProject',
+  name: platform.name,
+  description: platform.description || '',
+  url: '/platform/' + platform.id
+}) %>
+</script>
+
+<%- include('partials/footer') %>

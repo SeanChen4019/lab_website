@@ -17,7 +17,7 @@
       <% if (nationalPlatforms.length) { %>
         <div class="platform-card-grid">
           <% nationalPlatforms.forEach(function(item) { %>
-            <article class="platform-card">
+            <a class="platform-card" href="/platform/<%= item.id %>">
               <div class="platform-card-photo" style="<%= item.image_url ? 'background-image:url(' + item.image_url + ')' : '' %>">
                 <% if (!item.image_url) { %><i class="fas fa-satellite-dish"></i><% } %>
                 <em>国家级</em>
@@ -26,7 +26,7 @@
                 <h3><%= item.name %></h3>
                 <p><%= item.description %></p>
               </div>
-            </article>
+            </a>
           <% }); %>
         </div>
       <% } else { %>
@@ -42,7 +42,7 @@
       <% if (provincialPlatforms.length) { %>
         <div class="platform-card-grid">
           <% provincialPlatforms.forEach(function(item) { %>
-            <article class="platform-card">
+            <a class="platform-card" href="/platform/<%= item.id %>">
               <div class="platform-card-photo" <%= item.image_url ? 'style="background-image:url(' + item.image_url + ')"' : '' %>>
                 <% if (!item.image_url) { %><i class="fas fa-city"></i><% } %>
                 <em>省部级</em>
@@ -51,7 +51,7 @@
                 <h3><%= item.name %></h3>
                 <p><%= item.description %></p>
               </div>
-            </article>
+            </a>
           <% }); %>
         </div>
       <% } else { %>

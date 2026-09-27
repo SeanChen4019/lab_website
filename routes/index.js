@@ -203,6 +203,23 @@ router.get('/platforms', async (req, res) => {
   }
 });
 
+// 平台详情（点平台卡片进来，看平台简介与进展）
+router.get('/platform/:id', async (req, res) => {
+  try {
+    const platform = await db.get('SELECT * FROM platforms WHERE id = ? AND is_active = 1', [req.params.id]);
+    if (!platform) {
+      return res.status(404).render('error', { title: '平台不存在', message: '该平台不存在或已下线', code: 404 });
+    }
+    const related = await db.all(
+      'SELECT id, name, level, sort_order FROM platforms WHERE is_active = 1 ORDER BY sort_order ASC, id ASC'
+    );
+    res.render('platform-detail', { title: platform.name, platform, related });
+  } catch (error) {
+    console.error(error);
+    res.status(500).render('error', { title: '错误', message: '页面加载失败', code: 500 });
+  }
+});
+
 // 研究成果
 router.get('/achievements', async (req, res) => {
   try {

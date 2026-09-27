@@ -133,4 +133,28 @@ router.get('/settings', adminAuth, async (req, res) => {
   res.render('admin/settings', { title: '系统设置' });
 });
 
+// 页面文案：把前台写死的栏目文字集中到一个清单页里改
+// 以前只能走「可视化编辑」→ 在前台页面上点元素才能进，没有清单，用户找不到。
+const PAGE_CONTENT_BLOCKS = [
+  { key: 'about-intro',   label: '实验室简介', page: '/about（实验室概况）' },
+  { key: 'about-goals',   label: '研究目标',   page: '/about（实验室概况）' },
+  { key: 'about-history', label: '发展历程',   page: '/about（实验室概况）' }
+];
+
+router.get('/page-content', adminAuth, async (req, res) => {
+  try {
+    const db = require('../database/db');
+    const rows = await db.all("SELECT key, value FROM settings WHERE key LIKE 'page_content%'");
+    const stored = {};
+    rows.forEach(r => { stored[r.key] = r.value; });
+    const blocks = PAGE_CONTENT_BLOCKS.map(b => Object.assign({}, b, {
+      filled: !!(stored['page_content_' + b.key] || '').trim()
+    }));
+    res.render('admin/page-content', { title: '页面文案', blocks });
+  } catch (error) {
+    console.error(error);
+    res.status(500).render('error', { title: '错误', message: '页面加载失败', code: 500 });
+  }
+});
+
 module.exports = router;

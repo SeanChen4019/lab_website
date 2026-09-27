@@ -1481,3 +1481,30 @@ body,
    color:#86868b），所以这里**只改字号**，不要动另外两个属性 ——
    否则会出现「首页 0.6px / 内页 0.35px」这种新的不一致。 */
 .is-inner .brand-copy small { font-size: 10px !important; }
+
+/* ==========================================================================
+   第十八部分 · 平台卡片改成可点进详情
+   ==========================================================================
+   原来 .platform-card 是 <article>，没有任何入口进详情页。
+   现在改成 <a href="/platform/:id">，需要补回 <a> 默认被去掉的样式，
+   并给一个"能点"的视觉提示。
+   ========================================================================== */
+a.platform-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+a.platform-card:focus-visible {
+  outline: 2px solid #0071e3;
+  outline-offset: 3px;
+}
+/* 鼠标移上去给个提示：卡片微抬 + 标题变蓝 */
+a.platform-card:hover { transform: translateY(-4px); }
+a.platform-card:hover .platform-card-copy h3 { color: #0071e3 !important; }
+a.platform-card::after {
+  content: "查看详情 →";
+  display: block;
+  margin: 12px 20px 18px;
+  font-size: 13px;
+  color: #0071e3;
+}

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - 电磁频谱认知智能通信实验室</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="<%= assetUrl('/css/admin.css') %>">
+</head>
+<body>
+  <div class="admin-layout">
+    <%- include('../partials/admin-sidebar') %>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <h1>页面文案</h1>
+        </div>
+        <div class="header-right">
+          <a class="btn" href="/about" target="_blank" rel="noopener">
+            <i class="fas fa-external-link-alt"></i> 查看概况页
+          </a>
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> 退出
+          </button>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <div class="table-container" style="margin-bottom:22px">
+          <div style="padding:18px 20px;line-height:1.8">
+            <p style="margin:0 0 8px"><strong>这里放的是前台页面上「写死的栏目文字」</strong>——以前只能改代码，现在可以直接改。</p>
+            <p style="margin:0;color:#6e6e73;font-size:13px">
+              改完点「保存」，前台立刻生效。<strong>把内容清空，就会恢复成原来的默认文字</strong>（不会变成空白）。
+              需要图文混排就用编辑器工具栏插图片。
+            </p>
+          </div>
+        </div>
+
+        <% blocks.forEach(function (block) { %>
+        <div class="table-container" style="margin-bottom:22px">
+          <div class="table-header">
+            <h2><i class="fas fa-paragraph"></i> <%= block.label %></h2>
+            <span style="color:#6e6e73;font-size:13px">
+              所在页面：<%= block.page %>
+              <% if (block.filled) { %><span style="color:#34c759">· 已自定义</span><% } else { %><span>· 使用默认文字</span><% } %>
+            </span>
+          </div>
+          <div style="padding:20px">
+            <textarea id="pc-<%= block.key %>" style="min-height:170px" placeholder="留空则显示页面原有的默认文字"></textarea>
+            <div style="margin-top:14px;display:flex;gap:12px;align-items:center">
+              <button class="btn btn-primary" data-save="<%= block.key %>">
+                <i class="fas fa-save"></i> 保存
+              </button>
+              <button class="btn" data-reset="<%= block.key %>">
+                <i class="fas fa-undo"></i> 恢复默认文字
+              </button>
+              <span data-msg="<%= block.key %>" style="font-size:13px;color:#34c759"></span>
+            </div>
+          </div>
+        </div>
+        <% }); %>
+      </div>
+    </main>
+  </div>
+
+  <script src="<%= assetUrl('/js/admin-safe.js') %>"></script>
+  <script src="<%= assetUrl('/js/admin-editor.js') %>"></script>
+  <script>
+    const KEYS = <%- JSON.stringify(blocks.map(b => b.key)) %>;
+    let token = localStorage.getItem('token') || '';
+    const editors = {};
+
+    function logout() {
+      localStorage.removeItem('token');
+      location.href = '/admin/login';
+    }
+
+    async function api(path, method, body) {
+      const res = await fetch('/api' + path, {
+        method,
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: body ? JSON.stringify(body) : undefined
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) throw new Error(data.message || '操作失败');
+      return data;
+    }
+
+    function msg(key, text, color) {
+      const el = document.querySelector('[data-msg="' + key + '"]');
+      if (!el) return;
+      el.textContent = text;
+      el.style.color = color || '#34c759';
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { el.textContent = ''; }, 2600);
+    }
+
+    async function load() {
+      for (const key of KEYS) {
+        const box = document.getElementById('pc-' + key);
+        try {
+          const data = await api('/page-content/' + key, 'GET');
+          box.value = data.content || '';
+        } catch (e) {
+          box.value = '';
+        }
+        editors[key] = new RichPublisher('pc-' + key, { token: () => token });
+      }
+    }
+
+    async function save(key) {
+      const btn = document.querySelector('[data-save="' + key + '"]');
+      btn.disabled = true;
+      try {
+        await api('/page-content/' + key, 'PUT', { content: document.getElementById('pc-' + key).value });
+        msg(key, '✓ 已保存，前台立即生效');
+      } catch (e) {
+        msg(key, '✗ ' + e.message, '#ff3b30');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function reset(key) {
+      if (!confirm('恢复成页面原有的默认文字？当前自定义内容会被清空。')) return;
+      try {
+        await api('/page-content/' + key, 'PUT', { content: '' });
+        document.getElementById('pc-' + key).value = '';
+        msg(key, '✓ 已恢复默认文字');
+      } catch (e) {
+        msg(key, '✗ ' + e.message, '#ff3b30');
+      }
+    }
+
+    document.querySelectorAll('[data-save]').forEach(b => b.addEventListener('click', () => save(b.dataset.save)));
+    document.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', () => reset(b.dataset.reset)));
+
+    load();
+  </script>
+</body>
+</html>

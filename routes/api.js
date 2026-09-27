@@ -774,17 +774,17 @@ router.get('/platforms', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/platforms', authMiddleware, validateLengths(['name', 'description']), async (req, res) => {
+router.post('/platforms', authMiddleware, validateLengths(['name', 'description', 'content', 'progress']), async (req, res) => {
   try {
-    const { level, name, description, image_url, sort_order, is_active = 1 } = req.body;
+    const { level, name, description, image_url, content, progress, sort_order, is_active = 1 } = req.body;
     const checkedName = requiredText(name, '平台名称', LIMITS.title);
     if (checkedName.error) return res.status(400).json({ success: false, message: checkedName.error });
     if (!['national', 'provincial'].includes(level)) return res.status(400).json({ success: false, message: '请选择平台级别' });
     const checkedImage = normalizeUrl(image_url);
     if (checkedImage === null) return res.status(400).json({ success: false, message: '平台图片地址不正确' });
     const result = await db.run(
-      'INSERT INTO platforms (level, name, description, image_url, sort_order, is_active) VALUES (?, ?, ?, ?, ?, ?)',
-      [level, checkedName.value, description || '', checkedImage, Number(sort_order) || 0, normalizeFlag(is_active, 1)]
+      'INSERT INTO platforms (level, name, description, image_url, content, progress, sort_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [level, checkedName.value, description || '', checkedImage, content || '', progress || '', Number(sort_order) || 0, normalizeFlag(is_active, 1)]
     );
     res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/platforms' });
   } catch (error) {
@@ -792,17 +792,17 @@ router.post('/platforms', authMiddleware, validateLengths(['name', 'description'
   }
 });
 
-router.put('/platforms/:id', authMiddleware, validateLengths(['name', 'description']), async (req, res) => {
+router.put('/platforms/:id', authMiddleware, validateLengths(['name', 'description', 'content', 'progress']), async (req, res) => {
   try {
-    const { level, name, description, image_url, sort_order, is_active } = req.body;
+    const { level, name, description, image_url, content, progress, sort_order, is_active } = req.body;
     const checkedName = requiredText(name, '平台名称', LIMITS.title);
     if (checkedName.error) return res.status(400).json({ success: false, message: checkedName.error });
     if (!['national', 'provincial'].includes(level)) return res.status(400).json({ success: false, message: '请选择平台级别' });
     const checkedImage = normalizeUrl(image_url);
     if (checkedImage === null) return res.status(400).json({ success: false, message: '平台图片地址不正确' });
     await db.run(
-      'UPDATE platforms SET level = ?, name = ?, description = ?, image_url = ?, sort_order = ?, is_active = ? WHERE id = ?',
-      [level, checkedName.value, description || '', checkedImage, Number(sort_order) || 0, normalizeFlag(is_active, 1), req.params.id]
+      'UPDATE platforms SET level = ?, name = ?, description = ?, image_url = ?, content = ?, progress = ?, sort_order = ?, is_active = ? WHERE id = ?',
+      [level, checkedName.value, description || '', checkedImage, content || '', progress || '', Number(sort_order) || 0, normalizeFlag(is_active, 1), req.params.id]
     );
     res.json({ success: true, message: '更新成功' });
   } catch (error) {
