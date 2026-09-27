@@ -247,41 +247,24 @@ async function getDb() {
   return dbPromise;
 }
 
-// 查询单条记录
-async function get(sql, params = []) {
+// Query helpers share statement cleanup and execute against the current database.
+async function query(sql, params, single) {
   await getDb();
   return withLock(() => {
-    const database = db;
-    const stmt = database.prepare(sql);
-    if (params.length > 0) {
-      stmt.bind(params);
+    const statement = db.prepare(sql);
+    try {
+      statement.bind(params);
+      if (single) return statement.step() ? statement.getAsObject() : null;
+      const rows = [];
+      while (statement.step()) rows.push(statement.getAsObject());
+      return rows;
+    } finally {
+      statement.free();
     }
-    let result = null;
-    if (stmt.step()) {
-      result = stmt.getAsObject();
-    }
-    stmt.free();
-    return result;
   });
 }
-
-// 查询多条记录
-async function all(sql, params = []) {
-  await getDb();
-  return withLock(() => {
-    const database = db;
-    const stmt = database.prepare(sql);
-    if (params.length > 0) {
-      stmt.bind(params);
-    }
-    const results = [];
-    while (stmt.step()) {
-      results.push(stmt.getAsObject());
-    }
-    stmt.free();
-    return results;
-  });
-}
+function get(sql, params = []) { return query(sql, params, true); }
+function all(sql, params = []) { return query(sql, params, false); }
 
 // 执行SQL（插入、更新、删除）
 async function run(sql, params = []) {

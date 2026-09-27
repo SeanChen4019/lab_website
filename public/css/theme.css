@@ -1362,14 +1362,13 @@ body,
   filter: none !important;
 }
 
-/* hero 大图也改成完整显示（用户要求"全部"）。
-   注意：hero 是 1440×609 的宽框，横图放进去会在左右留白；
-   留白处会露出 hero 本身的深色底（#102f4c），看起来像影院黑边。
-   如果觉得不好看，删掉这一段即可恢复铺满。 */
+/* hero 大图：用户看过后明确要求**铺满**，不要留白。
+   所以这里回退成 cover（放大铺满、裁掉超出部分）。
+   下面第十三部分里的 .news-card-image 等内容配图**仍然保持 contain**，
+   那些是用户明确要求"必须完整显示"的（海报、截图不能被裁）。 */
 .is-home .hero-slide {
-  background-size: contain !important;
-  background-repeat: no-repeat !important;
-  background-position: center !important;
+  background-size: cover !important;
+  background-position: center 48% !important;
 }
 
 /* ==========================================================================
@@ -1381,18 +1380,15 @@ body,
    内页 banner 是 1440×270（宽高比 5.33），而图片是 3070×2043（宽高比 1.50），
    用 cover 只能看到图片正中间一条，观感跟首页差很多。
 
-   这里统一成 contain。同时把 banner 加高到 340px，
-   避免图片在 270px 的框里显得太小、两侧留白过多。
+   用户看过 contain 的效果后要求改回**铺满**，所以这里整体回退：
+   恢复成 cover + 原来的 270px 高度，跟首页 hero 保持同一种观感。
+   （cover 的尺寸本来来自 style.css:2016 的 background 简写，
+   这里显式写出来，避免依赖加载顺序。）
    ========================================================================== */
 .is-inner .page-banner {
-  height: 340px !important;
-  background-size: contain !important;
+  background-size: cover !important;
   background-repeat: no-repeat !important;
-  background-position: center !important;
-}
-/* 手机端不用那么高 */
-@media (max-width: 900px) {
-  .is-inner .page-banner { height: 260px !important; }
+  background-position: center 48% !important;
 }
 
 /* ==========================================================================
@@ -1423,4 +1419,13 @@ body,
     height: 44px !important;
     margin-right: 10px !important;
   }
+}
+/* Keep section tabs inside the banner instead of inheriting old fixed offsets. */
+.is-inner { --inner-banner-height:340px; --inner-tabs-height:58px; }
+.is-inner .page-banner { height:var(--inner-banner-height) !important; }
+.is-inner .inner-tabs { top:calc(var(--inner-banner-height) - var(--inner-tabs-height)); height:var(--inner-tabs-height); }
+.is-inner .page-banner .container { padding-top:190px; }
+@media(max-width:768px) {
+ .is-inner { --inner-banner-height:260px; --inner-tabs-height:50px; }
+ .is-inner .page-banner .container { padding-top:128px; }
 }

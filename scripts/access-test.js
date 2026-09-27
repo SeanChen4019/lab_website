@@ -42,7 +42,7 @@ check(await call('/accounts/'+a.id,'PUT',{status:'disabled'},token));check(await
 check(await call('/auth/password','PUT',{currentPassword:'MemberTest2026',newPassword:'ChangedTest2026'},other));check(await call('/contributions','GET',null,other),401);
 const newToken=check(await call('/auth/login','POST',{username:b.username,password:'ChangedTest2026'})).token;check(await call('/auth/logout','POST',{},newToken));check(await call('/contributions','GET',null,newToken),401);
 check(await call('/accounts/'+admin.user.id,'PUT',{status:'disabled'},token),403);
-console.log('PASS pending accounts, tampered role, 7 content workflows, isolation, conflict, reassignment, disable, password and logout revocation');
+console.log('PASS pending accounts, tampered role, 6 content workflows, isolation, conflict, reassignment, disable, password and logout revocation');
 console.log('Isolated test database:',dir);
 }finally{await new Promise(r=>s.close(r));}
 })().catch(e=>{console.error(e);process.exitCode=1;});

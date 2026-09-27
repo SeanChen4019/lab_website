@@ -1,7 +1,7 @@
 const { spawnSync } = require('child_process');
 const path = require('path');
 const suites = [
-  'smoke-test.js', 'all-content-test.js', 'reliability-test.js',
+  'recent-changes-test.js', 'smoke-test.js', 'all-content-test.js', 'reliability-test.js',
   'browser-test.js', 'legacy-forms-test.js', 'collaboration-browser-test.js', 'frontend-sweep.js'
 ];
 (async () => {

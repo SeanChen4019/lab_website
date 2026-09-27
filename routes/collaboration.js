@@ -25,13 +25,13 @@ router.get('/contributions/schema',wrap(async(req,res)=>ok(res,{types:Object.fro
 router.get('/contributions',wrap(async(req,res)=>{
  const submissions=await db.all('SELECT * FROM submissions WHERE owner_id=? ORDER BY updated_at DESC,id DESC',[req.user.id]);
  const owned=[];for(const [type,c]of Object.entries(configs)){for(const row of await db.all(`SELECT * FROM ${c.table} WHERE owner_id=? ORDER BY id DESC`,[req.user.id]))owned.push({type,record:row,url:c.url+row.id});}
- ok(res,{submissions:submissions.map(s=>({...s,payload:JSON.parse(s.payload)})),owned});
+ ok(res,{submissions:submissions.filter(s=>Object.hasOwn(configs,s.type)).map(s=>({...s,payload:JSON.parse(s.payload)})),owned});
 }));
 router.post('/contributions',wrap(async(req,res)=>{
  const {type,target_id,status='draft'}=req.body;if(!['draft','pending'].includes(status))throw error('状态不正确');const payload=validate(type,req.body.payload,status==='pending');const target=target_id==null?null:id(target_id);
  const result=await db.transaction(tx=>{
   let base=null;if(target){const row=tx.get(`SELECT * FROM ${configs[type].table} WHERE id=?`,[target]);if(!row||row.owner_id!==req.user.id)throw error('不能修改他人的内容',403);base=snapshot(type,row);}
-  if(target&&tx.get("SELECT id FROM submissions WHERE type=? AND target_id=? AND status IN ('pending','draft','rejected')",[type,target]))throw error('此内容已有草稿或待审核版本，请在原记录上修改',409);
+  if(target&&tx.get("SELECT id FROM submissions WHERE type=? AND target_id=? AND owner_id=? AND status IN ('pending','draft','rejected')",[type,target,req.user.id]))throw error('此内容已有草稿或待审核版本，请在原记录上修改',409);
   return tx.run('INSERT INTO submissions(owner_id,type,target_id,payload,base_snapshot,status) VALUES (?,?,?,?,?,?)',[req.user.id,type,target,JSON.stringify(payload),base,status]);
  });res.status(201).json({success:true,id:result.lastID,message:status==='pending'?'已提交审核，审核通过后公开':'草稿已保存'});
 }));
@@ -82,18 +82,18 @@ router.get('/accounts/content/:type',wrap(async(req,res)=>{
 router.put('/accounts/content/:type/:id',wrap(async(req,res)=>{
  const cfg=Object.hasOwn(configs,req.params.type)?configs[req.params.type]:null;if(!cfg)throw error('内容类型不正确');const owner=req.body.owner_id==null?null:id(req.body.owner_id);
  await db.transaction(tx=>{if(owner){const user=tx.get("SELECT id FROM admins WHERE id=? AND status='active'",[owner]);if(!user)throw error('请选择已开通的账号');}
- const row=tx.get(`SELECT id FROM ${cfg.table} WHERE id=?`,[id(req.params.id)]);if(!row)throw error('内容不存在',404);
+ const row=tx.get(`SELECT id,owner_id FROM ${cfg.table} WHERE id=?`,[id(req.params.id)]);if(!row)throw error('内容不存在',404);if(row.owner_id===owner)return;
  tx.run(`UPDATE ${cfg.table} SET owner_id=? WHERE id=?`,[owner,row.id]);
  tx.run("UPDATE submissions SET status='rejected',review_note='资料归属已改变，请联系系统管理员',version=version+1 WHERE type=? AND target_id=? AND status='pending'",[req.params.type,row.id]);});ok(res);
 }));
 router.get('/reviews',wrap(async(req,res)=>{
  const list=await db.all("SELECT s.*,a.name AS owner_name,a.username,a.status AS account_status FROM submissions s JOIN admins a ON a.id=s.owner_id WHERE s.status!='draft' ORDER BY CASE s.status WHEN 'pending' THEN 0 ELSE 1 END,s.id DESC");
- ok(res,{submissions:list.map(s=>({...s,payload:JSON.parse(s.payload),base_snapshot:s.base_snapshot?JSON.parse(s.base_snapshot):null}))});
+ ok(res,{submissions:list.filter(s=>Object.hasOwn(configs,s.type)).map(s=>({...s,payload:JSON.parse(s.payload),base_snapshot:s.base_snapshot?JSON.parse(s.base_snapshot):null}))});
 }));
 router.post('/reviews/:id/decision',wrap(async(req,res)=>{
  const {decision,note='',version}=req.body;if(!['approve','reject'].includes(decision))throw error('审核操作不正确');if(typeof note!=='string'||note.length>1000)throw error('审核意见最多1000字');if(decision==='reject'&&!note.trim())throw error('请填写退回原因');
  const result=await db.transaction(tx=>{
-  const s=tx.get('SELECT * FROM submissions WHERE id=?',[id(req.params.id)]);if(!s)throw error('申请不存在',404);if(s.status!=='pending'||s.version!==version)throw error('申请已变更，请刷新后审核',409);
+  const s=tx.get('SELECT * FROM submissions WHERE id=?',[id(req.params.id)]);if(!s)throw error('申请不存在',404);if(!Object.hasOwn(configs,s.type))throw error('此栏目已停用，历史申请不能再发布',410);if(s.status!=='pending'||s.version!==version)throw error('申请已变更，请刷新后审核',409);
   if(decision==='reject'){tx.run("UPDATE submissions SET status='rejected',review_note=?,reviewer_id=?,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=?",[note,req.user.id,s.id]);return {};}
   if(!tx.get("SELECT id FROM admins WHERE id=? AND status='active'",[s.owner_id]))throw error('该账号尚未开通或已停用',409);
   const cfg=configs[s.type],payload=validate(s.type,JSON.parse(s.payload));let target=s.target_id;
