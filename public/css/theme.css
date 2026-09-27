@@ -1303,3 +1303,71 @@ body,
     padding-bottom: clamp(84px, 12vh, 110px) !important;
   }
 }
+
+/* ==========================================================================
+   第十三部分 · 内容图片完整显示（不再裁切）
+   ==========================================================================
+   原来这些图都用 background-size: cover —— 放大铺满整个框，超出的部分直接裁掉。
+   如果上传的是海报、截图、证书这类「有内容」的图，就会被裁掉关键信息
+   （用户实测：最佳论文奖海报的标题被裁没了）。
+
+   改成 contain：完整显示整张图，不足的地方用底色补白。
+   代价是可能出现左右或上下留白 —— 这是用户明确接受并要求的。
+
+   同时必须关掉悬停放大：第十部分给这些图加了 transform: scale(1.045)，
+   在 contain 模式下放大就等于又裁了一次。
+   ========================================================================== */
+
+.news-card-image,
+.ticker-thumb,
+.social-card-photo,
+.platform-card-photo,
+.dataset-card-cover,
+.textbook-card-cover,
+.alumni-card-photo,
+.leader-photo,
+.people-card-photo,
+.ach-media,
+.home-news-featured .news-card-image {
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+}
+
+/* 留白处用浅色补上，看起来像"图片装裱"，而不是破洞 */
+.news-card-image,
+.ticker-thumb,
+.social-card-photo,
+.dataset-card-cover,
+.textbook-card-cover,
+.alumni-card-photo,
+.people-card-photo {
+  background-color: #f5f5f7 !important;
+}
+.platform-card-photo { background-color: #f5f5f7 !important; }
+
+/* 悬停不再放大（放大 = 又裁一次） */
+.news-card:hover .news-card-image,
+.social-card:hover .social-card-photo,
+.platform-card:hover .platform-card-photo,
+.alumni-card:hover .alumni-card-photo,
+.people-card:hover .people-card-photo img,
+.dataset-card:hover .dataset-card-cover,
+.textbook-card:hover .textbook-card-cover {
+  transform: none !important;
+}
+/* 原来这条悬停会把图放大到 100% 宽，也一起去掉 */
+.news-card:hover .news-card-image {
+  background-size: contain !important;
+  filter: none !important;
+}
+
+/* hero 大图也改成完整显示（用户要求"全部"）。
+   注意：hero 是 1440×609 的宽框，横图放进去会在左右留白；
+   留白处会露出 hero 本身的深色底（#102f4c），看起来像影院黑边。
+   如果觉得不好看，删掉这一段即可恢复铺满。 */
+.is-home .hero-slide {
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+}
