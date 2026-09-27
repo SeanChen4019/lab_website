@@ -80,7 +80,10 @@
       <div class="card-header">
         <h2><i class="fas fa-bullseye"></i> 研究目标</h2>
       </div>
-      <div class="card-body">
+      <div class="card-body" data-cms-type="page-content" data-cms-id="about-goals" data-cms-label="研究目标">
+        <% if (siteSettings['page_content_about-goals']) { %>
+          <%- siteSettings['page_content_about-goals'] %>
+        <% } else { %>
         <div class="goals-grid">
           <div class="goal-item">
             <div class="goal-icon"><i class="fas fa-satellite"></i></div>
@@ -103,6 +106,7 @@
               <p>服务航空、航天、民航、国防，推动理论研究与重大需求结合</p>
           </div>
         </div>
+        <% } %>
       </div>
     </div>
 
@@ -110,7 +114,10 @@
       <div class="card-header">
         <h2><i class="fas fa-history"></i> 发展历程</h2>
       </div>
-      <div class="card-body">
+      <div class="card-body" data-cms-type="page-content" data-cms-id="about-history" data-cms-label="发展历程">
+        <% if (siteSettings['page_content_about-history']) { %>
+          <%- siteSettings['page_content_about-history'] %>
+        <% } else { %>
         <div class="history-track">
           <div class="history-event">
             <div class="history-year">2016</div>
@@ -134,6 +141,7 @@
             </div>
           </div>
         </div>
+        <% } %>
       </div>
     </div>
 
