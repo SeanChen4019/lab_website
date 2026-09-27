@@ -1394,3 +1394,33 @@ body,
 @media (max-width: 900px) {
   .is-inner .page-banner { height: 260px !important; }
 }
+
+/* ==========================================================================
+   第十五部分 · 页头换成实验室正式 logo
+   ==========================================================================
+   原来 .brand-mark 里是三个 span 拼的 SVG 轨道动画（.orbit ×2 + .signal-core）。
+   现在换成 public/images/site/lab-logo.png（用户提供的实验室徽标，
+   原图 891×776 / 595KB，已裁边并压到 162×140 / 34KB，按 2x 出图）。
+
+   尺寸沿用 .brand-mark 原有的三档（74×66 / 手机 51×50 / 首页内页 34×34），
+   图片用 object-fit: contain 自适应，不变形。
+   注意：style.css 与 refinement.css 里针对 .orbit / .signal-core 的规则
+   已成死代码，但没有元素匹配、无害，按约定不动那两个文件。
+   ========================================================================== */
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* 手机/平板上 .brand-mark 原本被压到 34×34（refinement.css:128），
+   那是给线条画的 SVG 定的尺寸；换成细节丰富的徽标后 34px 看不清，
+   这里放大到 48×44。 */
+@media (max-width: 900px) {
+  body:is(.is-home, .is-inner) .brand-mark {
+    width: 48px !important;
+    height: 44px !important;
+    margin-right: 10px !important;
+  }
+}

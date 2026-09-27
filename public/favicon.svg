@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="电磁频谱认知智能通信实验室">
-  <!-- 与页头品牌标识一致：两条交叉椭圆轨道 + 中心信号核心 -->
-  <rect width="64" height="64" rx="14" fill="#1d1d1f"/>
-  <g fill="none" stroke="#0071e3" stroke-width="3.4" stroke-linecap="round">
-    <ellipse cx="32" cy="32" rx="23" ry="15" transform="rotate(28 32 32)"/>
-    <ellipse cx="32" cy="32" rx="23" ry="15" transform="rotate(-28 32 32)"/>
-  </g>
-  <circle cx="32" cy="32" r="6.5" fill="#d70015"/>
-</svg>

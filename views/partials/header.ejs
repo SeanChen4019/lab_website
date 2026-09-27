@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/svg+xml" href="<%= assetUrl('/favicon.svg') %>">
-  <link rel="mask-icon" href="<%= assetUrl('/favicon.svg') %>" color="#0071e3">
+  <link rel="icon" type="image/png" sizes="32x32" href="<%= assetUrl('/favicon-32.png') %>">
+  <link rel="icon" type="image/png" sizes="180x180" href="<%= assetUrl('/favicon-180.png') %>">
+  <link rel="apple-touch-icon" sizes="180x180" href="<%= assetUrl('/favicon-180.png') %>">
   <meta name="keywords" content="<%= typeof siteSettings !== 'undefined' ? siteSettings.site_keywords : '频谱认知,天地一体化,南京航空航天大学' %>">
   <meta name="description" content="<%= typeof siteSettings !== 'undefined' ? siteSettings.site_description : '电磁频谱认知智能通信实验室' %>">
   <title><%= title %> - 电磁频谱认知智能通信实验室</title>
@@ -35,7 +36,7 @@
     <div class="brand-row container">
       <a class="brand" href="/" aria-label="返回首页">
         <span class="brand-mark" aria-hidden="true">
-          <span class="orbit orbit-one"></span><span class="orbit orbit-two"></span><span class="signal-core"></span>
+          <img src="<%= assetUrl('/images/site/lab-logo.png') %>" alt="" width="162" height="140" decoding="async">
         </span>
         <span class="brand-copy">
           <strong><%= typeof siteSettings !== 'undefined' ? siteSettings.site_name : '电磁频谱认知智能通信实验室' %></strong>
