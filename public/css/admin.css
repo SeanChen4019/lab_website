@@ -756,3 +756,32 @@ a {
  .admin-mobile-nav .sidebar-menu { padding:10px 0; max-height:65vh; overflow:auto; }
  .admin-mobile-nav .menu-item { color:white; padding:10px 0; display:block; }
 }
+
+/* ==========================================================================
+   侧栏滚动修复
+   ==========================================================================
+   原来 .admin-sidebar 是 position:fixed + top/bottom:0（占满整屏高），
+   但**没有 overflow** —— 侧栏有 19 个菜单项，屏幕放不下时下面的项
+   直接被切掉，而且滚不到，等于点不到。
+   实测用户屏幕下「平台管理 / 媒体报道 / 下载管理 / 系统设置」四项完全不可达。
+
+   改成：侧栏本身作为纵向 flex 容器，头部固定、菜单区可滚动。
+   ========================================================================== */
+.admin-sidebar {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.admin-sidebar .sidebar-menu {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* 滚动条做细一点，别太抢眼 */
+.admin-sidebar .sidebar-menu::-webkit-scrollbar { width: 6px; }
+.admin-sidebar .sidebar-menu::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.22);
+  border-radius: 3px;
+}
+.admin-sidebar .sidebar-menu::-webkit-scrollbar-track { background: transparent; }

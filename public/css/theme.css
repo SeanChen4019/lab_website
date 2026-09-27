@@ -1371,3 +1371,26 @@ body,
   background-repeat: no-repeat !important;
   background-position: center !important;
 }
+
+/* ==========================================================================
+   第十四部分 · 内页 banner 与首页 hero 统一
+   ==========================================================================
+   首页 hero 上一轮已改成 background-size: contain（完整显示图片）；
+   内页 .page-banner 还是 cover（放大铺满、裁掉超出部分）。
+
+   内页 banner 是 1440×270（宽高比 5.33），而图片是 3070×2043（宽高比 1.50），
+   用 cover 只能看到图片正中间一条，观感跟首页差很多。
+
+   这里统一成 contain。同时把 banner 加高到 340px，
+   避免图片在 270px 的框里显得太小、两侧留白过多。
+   ========================================================================== */
+.is-inner .page-banner {
+  height: 340px !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+}
+/* 手机端不用那么高 */
+@media (max-width: 900px) {
+  .is-inner .page-banner { height: 260px !important; }
+}
