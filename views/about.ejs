@@ -44,7 +44,7 @@
             </a>
             <div class="leader-copy">
               <h3><%= leader.name %></h3>
-              <p class="leader-title"><%= leader.title || '教授/博士生导师' %> · 实验室主任</p>
+              <p class="leader-title"><%= leader.title || '教授/博士生导师' %> · <%= leader.leader_title || '实验室主任' %></p>
               <% if (leader.research_area) { %><p class="leader-area"><i class="fas fa-flask"></i> 研究方向：<%= leader.research_area %></p><% } %>
               <p class="leader-bio"><%= leader.bio %></p>
               <div class="leader-actions">
@@ -64,7 +64,7 @@
                     <% } else { %>
                       <span class="leader-side-fallback"><%= (person.name || '?').slice(0, 1) %></span>
                     <% } %>
-                    <span class="leader-side-copy"><b><%= person.name %></b><small><%= person.title || '' %> · 实验室副主任</small></span>
+                    <span class="leader-side-copy"><b><%= person.name %></b><small><%= person.title || '' %> · <%= person.leader_title || '实验室副主任' %></small></span>
                   </a>
                 <% }); %>
               </div>

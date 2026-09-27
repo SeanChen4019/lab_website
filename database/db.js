@@ -195,7 +195,11 @@ async function getDb() {
       graduation_year: 'INTEGER',
       destination: "TEXT DEFAULT ''",
       resume: "TEXT DEFAULT ''",
-      recent_updates: "TEXT DEFAULT ''"
+      recent_updates: "TEXT DEFAULT ''",
+      // 行政职务（如「实验室主任」「实验室副主任」）。
+      // 原来前台是靠排序推断谁当主任的（sort_order 最小的那个），后台无法指定；
+      // 现在改成可填字段，前台优先显示它，没填才回落到默认称谓。
+      leader_title: "TEXT DEFAULT ''"
     };
     for (const [column, definition] of Object.entries(profileColumns)) {
       if (!teamColumns.has(column)) db.run(`ALTER TABLE team_members ADD COLUMN ${column} ${definition}`);

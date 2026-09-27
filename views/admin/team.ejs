@@ -95,6 +95,12 @@
                 <input type="email" id="memberEmail" placeholder="用于个人主页联系按钮">
               </div>
             </div>
+            <div class="form-row teacher-field">
+              <div class="form-group">
+                <label>行政职务</label>
+                <input type="text" id="memberLeaderTitle" placeholder="如：实验室主任、实验室副主任。只有「团队角色 = 负责人」会显示在概况页；不填则按排序自动判定（第一个为主任）">
+              </div>
+            </div>
             <div class="form-row student-field" hidden>
               <div class="form-group">
                 <label>培养层次</label>
@@ -273,6 +279,7 @@
       document.getElementById('memberTitle').value = '';
       document.getElementById('memberType').value = 'teacher';
       document.getElementById('memberRole').value = 'member';
+      document.getElementById('memberLeaderTitle').value = '';
       document.getElementById('memberEmail').value = '';
       document.getElementById('memberResearch').value = '';
       document.getElementById('memberBio').value = '';
@@ -302,6 +309,7 @@
       document.getElementById('memberTitle').value = m.title || '';
       document.getElementById('memberType').value = m.member_type || 'teacher';
       document.getElementById('memberRole').value = m.role;
+      document.getElementById('memberLeaderTitle').value = m.leader_title || '';
       document.getElementById('memberEmail').value = m.email || '';
       document.getElementById('memberResearch').value = m.research_area || '';
       document.getElementById('memberBio').value = m.bio || '';
@@ -346,6 +354,7 @@
         title: document.getElementById('memberTitle').value,
         member_type: document.getElementById('memberType').value,
         role: document.getElementById('memberRole').value,
+        leader_title: document.getElementById('memberLeaderTitle').value,
         email: document.getElementById('memberEmail').value,
         research_area: document.getElementById('memberResearch').value,
         bio: document.getElementById('memberBio').value,

@@ -539,12 +539,12 @@ router.get('/team', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/team', authMiddleware, validateLengths(['name', 'title', 'bio', 'email', 'research_area', 'destination', 'resume', 'recent_updates']), async (req, res) => {
+router.post('/team', authMiddleware, validateLengths(['name', 'title', 'leader_title', 'bio', 'email', 'research_area', 'destination', 'resume', 'recent_updates']), async (req, res) => {
   try {
     const {
       name, title, role = 'member', photo_url, email, research_area, bio,
       member_type = 'teacher', member_status = 'current', student_level = '',
-      enrollment_year, graduation_year, destination, resume, recent_updates,
+      enrollment_year, graduation_year, destination, resume, recent_updates, leader_title,
       sort_order, is_active = 1
     } = req.body;
     const checkedName = requiredText(name, '姓名', LIMITS.name);
@@ -562,15 +562,15 @@ router.post('/team', authMiddleware, validateLengths(['name', 'title', 'bio', 'e
     const result = await db.run(
       `INSERT INTO team_members
        (name, title, role, photo_url, email, research_area, bio, member_type, member_status,
-        student_level, enrollment_year, graduation_year, destination, resume, recent_updates, sort_order, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        student_level, enrollment_year, graduation_year, destination, resume, recent_updates, leader_title, sort_order, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         checkedName.value, String(title || '').trim(), member_type === 'student' ? 'member' : role,
         checkedPhoto, String(email || '').trim(), String(research_area || '').trim(), String(bio || '').trim(),
         member_type, member_type === 'teacher' ? 'current' : member_status,
         member_type === 'student' ? student_level : '', member_type === 'student' ? checkedEnrollmentYear : null,
         member_type === 'student' ? checkedGraduationYear : null, member_type === 'student' ? String(destination || '').trim() : '',
-        String(resume || '').trim(), String(recent_updates || '').trim(), Number(sort_order) || 0, normalizeFlag(is_active, 1)
+        String(resume || '').trim(), String(recent_updates || '').trim(), String(leader_title || '').trim(), Number(sort_order) || 0, normalizeFlag(is_active, 1)
       ]
     );
     res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/team/' + result.lastID });
@@ -580,12 +580,12 @@ router.post('/team', authMiddleware, validateLengths(['name', 'title', 'bio', 'e
   }
 });
 
-router.put('/team/:id', authMiddleware, validateLengths(['name', 'title', 'bio', 'email', 'research_area', 'destination', 'resume', 'recent_updates']), async (req, res) => {
+router.put('/team/:id', authMiddleware, validateLengths(['name', 'title', 'leader_title', 'bio', 'email', 'research_area', 'destination', 'resume', 'recent_updates']), async (req, res) => {
   try {
     const {
       name, title, role = 'member', photo_url, email, research_area, bio,
       member_type = 'teacher', member_status = 'current', student_level = '',
-      enrollment_year, graduation_year, destination, resume, recent_updates,
+      enrollment_year, graduation_year, destination, resume, recent_updates, leader_title,
       sort_order, is_active
     } = req.body;
     const checkedName = requiredText(name, '姓名', LIMITS.name);
@@ -604,14 +604,14 @@ router.put('/team/:id', authMiddleware, validateLengths(['name', 'title', 'bio',
       `UPDATE team_members SET
        name = ?, title = ?, role = ?, photo_url = ?, email = ?, research_area = ?, bio = ?,
        member_type = ?, member_status = ?, student_level = ?, enrollment_year = ?, graduation_year = ?,
-       destination = ?, resume = ?, recent_updates = ?, sort_order = ?, is_active = ? WHERE id = ?`,
+       destination = ?, resume = ?, recent_updates = ?, leader_title = ?, sort_order = ?, is_active = ? WHERE id = ?`,
       [
         checkedName.value, String(title || '').trim(), member_type === 'student' ? 'member' : role,
         checkedPhoto, String(email || '').trim(), String(research_area || '').trim(), String(bio || '').trim(),
         member_type, member_type === 'teacher' ? 'current' : member_status,
         member_type === 'student' ? student_level : '', member_type === 'student' ? checkedEnrollmentYear : null,
         member_type === 'student' ? checkedGraduationYear : null, member_type === 'student' ? String(destination || '').trim() : '',
-        String(resume || '').trim(), String(recent_updates || '').trim(), Number(sort_order) || 0,
+        String(resume || '').trim(), String(recent_updates || '').trim(), String(leader_title || '').trim(), Number(sort_order) || 0,
         normalizeFlag(is_active, 1), req.params.id
       ]
     );

@@ -82,6 +82,7 @@
         { key:'title', label:'职称 / 身份' },
         { key:'member_type', label:'人才类型', type:'select', options:{ teacher:'教师', student:'学生' } },
         { key:'role', label:'团队角色（教师）', type:'select', options:{ leader:'团队负责人', member:'普通教师 / 学生' } },
+        { key:'leader_title', label:'行政职务（负责人填）', full:true, hint:'如「实验室主任」「实验室副主任」；不填则按显示顺序自动判定，第一个为主任' },
         { key:'member_status', label:'学生状态', type:'select', options:{ current:'在读', alumni:'已毕业' } },
         { key:'student_level', label:'培养层次（学生）', type:'select', options:{ '':'不适用', undergraduate:'本科生', master:'硕士研究生', doctor:'博士研究生' } },
         { key:'enrollment_year', label:'入学年份', type:'number' },
@@ -97,7 +98,7 @@
         { key:'is_active', label:'前台显示', type:'checkbox' }
       ],
       defaults: {
-        name:'', title:'', member_type:'teacher', role:'member', member_status:'current', student_level:'',
+        name:'', title:'', leader_title:'', member_type:'teacher', role:'member', member_status:'current', student_level:'',
         enrollment_year:null, graduation_year:null, email:'', research_area:'', bio:'', resume:'', recent_updates:'',
         destination:'', photo_url:'', sort_order:0, is_active:1
       }
