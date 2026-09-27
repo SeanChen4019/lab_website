@@ -49,8 +49,7 @@ router.get('/dashboard', adminAuth, async (req, res) => {
   try {
     const db = require('../database/db');
 
-    const [notices, news, members, projects, downloads, platforms, patents, papers, socialPosts] = await Promise.all([
-      db.get('SELECT COUNT(*) as count FROM notices'),
+    const [news, members, projects, downloads, platforms, patents, papers, socialPosts] = await Promise.all([
       db.get('SELECT COUNT(*) as count FROM news'),
       db.get('SELECT COUNT(*) as count FROM team_members'),
       db.get('SELECT COUNT(*) as count FROM projects'),
@@ -64,7 +63,6 @@ router.get('/dashboard', adminAuth, async (req, res) => {
     res.render('admin/dashboard', {
       title: '管理后台',
       stats: {
-        notices: notices.count,
         news: news.count,
         members: members.count,
         projects: projects.count,
@@ -87,9 +85,6 @@ router.get('/banners', adminAuth, async (req, res) => {
 });
 
 // 通知管理
-router.get('/notices', adminAuth, async (req, res) => {
-  res.render('admin/notices', { title: '通知公告管理' });
-});
 
 // 新闻管理
 router.get('/news', adminAuth, async (req, res) => {
@@ -102,9 +97,6 @@ router.get('/team', adminAuth, async (req, res) => {
 });
 
 // 研究方向管理
-router.get('/research', adminAuth, async (req, res) => {
-  res.render('admin/research', { title: '研究方向管理' });
-});
 
 // 项目管理
 router.get('/projects', adminAuth, async (req, res) => {

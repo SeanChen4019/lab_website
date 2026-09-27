@@ -307,7 +307,7 @@ router.use((req,res,next) => {
 });
 
 const writeConflict=require('../services/write-conflict');
-const legacyTables={banners:'banners',news:'news',notices:'notices',team:'team_members',alumni:'alumni','research-areas':'research_areas',projects:'projects',downloads:'downloads',platforms:'platforms',patents:'patents',papers:'papers','social-posts':'social_posts'};
+const legacyTables={banners:'banners',news:'news',team:'team_members',alumni:'alumni',projects:'projects',downloads:'downloads',platforms:'platforms',patents:'patents',papers:'papers','social-posts':'social_posts'};
 router.use(async(req,res,next)=>{
  try {
   const parts=req.path.split('/').filter(Boolean),table=Object.hasOwn(legacyTables,parts[0])?legacyTables[parts[0]]:null;
@@ -386,63 +386,9 @@ router.delete('/banners/:id', authMiddleware, async (req, res) => {
 
 // ============ 通知公告管理 ============
 
-router.get('/notices', authMiddleware, async (req, res) => {
-  try {
-    const notices = await db.all('SELECT * FROM notices ORDER BY is_top DESC, publish_date DESC');
-    res.json({ success: true, notices });
-  } catch (error) {
-    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取失败' });
-  }
-});
 
-router.post('/notices', authMiddleware, validateLengths(['title', 'content']), async (req, res) => {
-  try {
-    const { title, content, link_url, is_top, is_active = 1, publish_date } = req.body;
-    const checkedTitle = requiredText(title, '通知标题', LIMITS.title);
-    if (checkedTitle.error) return res.status(400).json({ success: false, message: checkedTitle.error });
-    const checkedDate = normalizeDate(publish_date);
-    if (!checkedDate) return res.status(400).json({ success: false, message: '发布日期格式不正确' });
-    const checkedLink = normalizeUrl(link_url, { allowMail: true });
-    if (checkedLink === null) return res.status(400).json({ success: false, message: '相关链接必须是 http(s)、mailto 或站内地址' });
-    const result = await db.run(
-      'INSERT INTO notices (title, content, link_url, is_top, is_active, publish_date) VALUES (?, ?, ?, ?, ?, ?)',
-      [checkedTitle.value, cleanRichContent(content), checkedLink, normalizeFlag(is_top), normalizeFlag(is_active, 1), checkedDate]
-    );
-    const id = result.lastID;
-    res.status(201).json({ success: true, message: '发布成功', id, url: '/notice/' + id });
-  } catch (error) {
-    console.error('通知发布失败:', error);
-    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '添加失败' });
-  }
-});
 
-router.put('/notices/:id', authMiddleware, validateLengths(['title', 'content']), async (req, res) => {
-  try {
-    const { title, content, link_url, is_top, is_active, publish_date } = req.body;
-    const checkedTitle = requiredText(title, '通知标题', LIMITS.title);
-    if (checkedTitle.error) return res.status(400).json({ success: false, message: checkedTitle.error });
-    const checkedDate = normalizeDate(publish_date);
-    if (!checkedDate) return res.status(400).json({ success: false, message: '发布日期格式不正确' });
-    const checkedLink = normalizeUrl(link_url, { allowMail: true });
-    if (checkedLink === null) return res.status(400).json({ success: false, message: '相关链接必须是 http(s)、mailto 或站内地址' });
-    await db.run(
-      'UPDATE notices SET title = ?, content = ?, link_url = ?, is_top = ?, is_active = ?, publish_date = ? WHERE id = ?',
-      [checkedTitle.value, cleanRichContent(content), checkedLink, normalizeFlag(is_top), normalizeFlag(is_active, 1), checkedDate, req.params.id]
-    );
-    res.json({ success: true, message: '更新成功' });
-  } catch (error) {
-    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '更新失败' });
-  }
-});
 
-router.delete('/notices/:id', authMiddleware, async (req, res) => {
-  try {
-    await db.run('DELETE FROM notices WHERE id = ?', [req.params.id]);
-    res.json({ success: true, message: '删除成功' });
-  } catch (error) {
-    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '删除失败' });
-  }
-});
 
 // ============ 新闻管理 ============
 
@@ -707,52 +653,9 @@ router.delete('/alumni/:id', authMiddleware, async (req, res) => {
 
 // ============ 研究方向管理 ============
 
-router.get('/research-areas', authMiddleware, async (req, res) => {
-  try {
-    const areas = await db.all('SELECT * FROM research_areas ORDER BY sort_order ASC');
-    // researchAreas 是规范名（其余 11 个列表接口都用资源名复数）；
-    // areas 是历史名，保留是因为 public/js/admin-visual.js 没走 assetUrl 缓存失效，
-    // 已缓存旧脚本的浏览器还在用它。两者指向同一个数组。
-    res.json({ success: true, areas, researchAreas: areas });
-  } catch (error) {
-    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '获取失败' });
-  }
-});
 
-router.post('/research-areas', authMiddleware, validateLengths(['title', 'description']), async (req, res) => {
-  try {
-    const { title, description, icon, sort_order, is_active = 1 } = req.body;
-    const result = await db.run(
-      'INSERT INTO research_areas (title, description, icon, sort_order, is_active) VALUES (?, ?, ?, ?, ?)',
-      [title, description, icon || '', sort_order || 0, is_active]
-    );
-    res.status(201).json({ success: true, message: '添加成功', id: result.lastID, url: '/research' });
-  } catch (error) {
-    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '添加失败' });
-  }
-});
 
-router.put('/research-areas/:id', authMiddleware, validateLengths(['title', 'description']), async (req, res) => {
-  try {
-    const { title, description, icon, sort_order, is_active } = req.body;
-    await db.run(
-      'UPDATE research_areas SET title = ?, description = ?, icon = ?, sort_order = ?, is_active = ? WHERE id = ?',
-      [title, description || '', icon || '', Number(sort_order) || 0, normalizeFlag(is_active, 1), req.params.id]
-    );
-    res.json({ success: true, message: '更新成功' });
-  } catch (error) {
-    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '更新失败' });
-  }
-});
 
-router.delete('/research-areas/:id', authMiddleware, async (req, res) => {
-  try {
-    await db.run('DELETE FROM research_areas WHERE id = ?', [req.params.id]);
-    res.json({ success: true, message: '删除成功' });
-  } catch (error) {
-    res.status(error.status || 500).json({ success: false, message: error.status ? error.message : '删除失败' });
-  }
-});
 
 // ============ 项目管理 ============
 
@@ -1244,8 +1147,7 @@ router.post('/upload', authMiddleware, (req, res) => {
 
 router.get('/stats', authMiddleware, async (req, res) => {
   try {
-    const [notices, news, members, projects, downloads, platforms, patents, papers, socialPosts] = await Promise.all([
-      db.get('SELECT COUNT(*) as count FROM notices'),
+    const [news, members, projects, downloads, platforms, patents, papers, socialPosts] = await Promise.all([
       db.get('SELECT COUNT(*) as count FROM news'),
       db.get('SELECT COUNT(*) as count FROM team_members'),
       db.get('SELECT COUNT(*) as count FROM projects'),
@@ -1259,7 +1161,6 @@ router.get('/stats', authMiddleware, async (req, res) => {
     res.json({
       success: true,
       stats: {
-        notices: notices.count,
         news: news.count,
         members: members.count,
         projects: projects.count,

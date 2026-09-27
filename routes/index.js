@@ -77,17 +77,6 @@ router.get('/news',async(req,res)=>{
 });
 
 // 通知公告列表
-router.get('/notices', async (req, res) => {
-  try {
-    const notices = await db.all(
-      'SELECT * FROM notices WHERE is_active = 1 ORDER BY is_top DESC, publish_date DESC, id DESC'
-    );
-    res.render('notices', { title: '通知公告', notices });
-  } catch (error) {
-    console.error('通知公告加载失败:', error);
-    res.status(500).render('error', { title: '错误', message: '页面加载失败', code: 500 });
-  }
-});
 
 // 实验室概况
 router.get('/about', async (req, res) => {
@@ -102,8 +91,7 @@ router.get('/about', async (req, res) => {
        WHERE member_type = 'teacher' AND role = 'leader' AND is_active = 1
        ORDER BY sort_order ASC, id ASC`
     );
-    const researchAreas=await db.all('SELECT * FROM research_areas WHERE is_active=1 ORDER BY sort_order,id');
-    res.render('about', { title: '实验室概况', leader, leaderTeam, researchAreas });
+    res.render('about', { title: '实验室概况', leader, leaderTeam });
   } catch (error) {
     console.error(error);
     res.status(500).render('error', { title: '错误', message: '页面加载失败', code: 500 });
@@ -446,22 +434,5 @@ router.get('/news/:id', async (req, res) => {
 });
 
 // 通知详情
-router.get('/notice/:id', async (req, res) => {
-  try {
-    const notice = await db.get(
-      'SELECT * FROM notices WHERE id = ? AND is_active = 1',
-      [req.params.id]
-    );
-
-    if (!notice) {
-      return res.status(404).render('error', { title: '未找到', message: '通知不存在', code: 404 });
-    }
-
-    res.render('notice-detail', { title: notice.title, notice });
-  } catch (error) {
-    console.error(error);
-    res.status(500).render('error', { title: '错误', message: '页面加载失败', code: 500 });
-  }
-});
 
 module.exports = router;

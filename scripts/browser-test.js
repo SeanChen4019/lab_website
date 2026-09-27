@@ -37,7 +37,7 @@ async function main() {
 
   try {
     await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
-    const pages = ['/', '/about', '/team', '/platforms', '/achievements', '/resources', '/notices'];
+    const pages = ['/', '/about', '/team', '/platforms', '/achievements', '/resources'];
     for (const pathname of pages) {
       const response = await page.goto(baseUrl + pathname, { waitUntil: 'networkidle0' });
       assert.equal(response.status(), 200, `${pathname} 浏览器访问应返回 200`);

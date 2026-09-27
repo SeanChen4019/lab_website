@@ -5,10 +5,8 @@ try{token=(await api('/auth/login','POST',{username:process.env.TEST_ADMIN_USERN
 const entries=[
 ['banners','banners','banners',{title:'测试轮播',image_url:'/images/placeholder.svg',link_url:'/about',sort_order:1,is_active:1},'/'],
 ['news','news','news',{title:'测试新闻',category:'research',summary:'摘要',content:'<p>正文</p>',publish_date:'2026-09-26',is_active:1,is_top:0},'/news/'],
-['notices','notices','notices',{title:'测试通知',content:'<p>通知</p>',publish_date:'2026-09-26',is_active:1,is_top:0},'/notice/'],
 ['team','members','team_members',{name:'测试成员',title:'教师',member_type:'teacher',role:'member',bio:'简介',is_active:1},'/team/'],
 ['alumni','alumni','alumni',{name:'测试毕业生',degree_level:'master',graduation_year:2026,destination_type:'employment',destination:'测试单位',is_active:1},null],
-['research-areas','areas','research_areas',{title:'测试方向',description:'方向简介',icon:'wifi',is_active:1},'/about'],
 ['projects','projects','projects',{title:'测试项目',description:'项目说明',start_date:'2026-01-01',end_date:'2027-01-01',status:'进行中',content:'<p>项目正文</p>',is_active:1},'/project/'],
 ['platforms','platforms','platforms',{name:'测试平台',level:'national',description:'平台说明',is_active:1},'/platforms'],
 ['patents','patents','patents',{title:'测试专利',grant_date:'2026-09-26',patent_no:'TEST',content:'<p>专利正文</p>',is_active:1},'/patent/'],

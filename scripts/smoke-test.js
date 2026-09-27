@@ -20,7 +20,7 @@ async function main() {
   let createdMemberId = null;
 
   try {
-    const publicPages = ['/', '/about', '/team', '/platforms', '/achievements', '/resources', '/notices', '/search?q=频谱', '/admin/login'];
+    const publicPages = ['/', '/about', '/team', '/platforms', '/achievements', '/resources', '/search?q=频谱', '/admin/login'];
     for (const path of publicPages) {
       const response = await fetch(baseUrl + path);
       assert.equal(response.status, 200, `${path} 应返回 200`);
@@ -144,32 +144,10 @@ async function main() {
     assert.match(await listing.text(), new RegExp(marker), '首页新闻区应立即显示新内容');
     assert.match(await search.text(), new RegExp(marker), '全站搜索应立即找到新内容');
 
-    const noticeMarker = 'QA-NOTICE-' + Date.now();
-    const createdNotice = await json(await fetch(baseUrl + '/api/notices', {
-      method: 'POST',
-      headers: authHeaders,
-      body: JSON.stringify({
-        title: noticeMarker,
-        content: '<p>通知发布验收。</p>',
-        link_url: '',
-        publish_date: new Date().toISOString().slice(0, 10),
-        is_top: 0,
-        is_active: 1
-      })
-    }));
-    assert.equal(createdNotice.response.status, 201, '通知发布应返回 201');
-    assert.ok(createdNotice.data.id, '通知发布应返回新 ID');
-    createdNoticeId = createdNotice.data.id;
-    const noticesPage = await fetch(baseUrl + '/notices');
-    assert.match(await noticesPage.text(), new RegExp(noticeMarker), '通知列表应立即显示新通知');
-
-    console.log(`冒烟测试通过：${publicPages.length} 个页面、搜索、登录、新闻/通知发布与前台展示均正常`);
+    console.log(`冒烟测试通过：${publicPages.length} 个页面、搜索、登录、新闻发布与前台展示均正常`);
   } finally {
     if (token && createdNewsId) {
       await fetch(baseUrl + '/api/news/' + createdNewsId, { method: 'DELETE', headers: { authorization: 'Bearer ' + token } });
-    }
-    if (token && createdNoticeId) {
-      await fetch(baseUrl + '/api/notices/' + createdNoticeId, { method: 'DELETE', headers: { authorization: 'Bearer ' + token } });
     }
     if (token && createdMemberId) {
       await fetch(baseUrl + '/api/team/' + createdMemberId, { method: 'DELETE', headers: { authorization: 'Bearer ' + token } });

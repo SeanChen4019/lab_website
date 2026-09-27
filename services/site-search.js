@@ -34,7 +34,7 @@ async function searchSite(db, rawQuery) {
 
   const pattern = '%' + escapeLike(query) + '%';
   const like = " LIKE ? ESCAPE '\\'";
-  const [news, notices, members, areas, projects, downloads, platforms, patents, papers] = await Promise.all([
+  const [news, members, projects, downloads, platforms, patents, papers] = await Promise.all([
     db.all(
       `SELECT id, title, summary, content, category, publish_date FROM news
        WHERE is_active = 1 AND (title${like} OR summary${like} OR content${like})
@@ -42,22 +42,10 @@ async function searchSite(db, rawQuery) {
       [pattern, pattern, pattern]
     ),
     db.all(
-      `SELECT id, title, content, publish_date FROM notices
-       WHERE is_active = 1 AND (title${like} OR content${like})
-       ORDER BY is_top DESC, publish_date DESC LIMIT 15`,
-      [pattern, pattern]
-    ),
-    db.all(
       `SELECT id, name, title, research_area, bio, member_type, destination FROM team_members
        WHERE is_active = 1 AND (name${like} OR title${like} OR research_area${like} OR bio${like} OR resume${like} OR destination${like})
        ORDER BY member_type ASC, role ASC, sort_order ASC LIMIT 20`,
       [pattern, pattern, pattern, pattern, pattern, pattern]
-    ),
-    db.all(
-      `SELECT id, title, description FROM research_areas
-       WHERE is_active = 1 AND (title${like} OR description${like})
-       ORDER BY sort_order ASC LIMIT 12`,
-      [pattern, pattern]
     ),
     db.all(
       `SELECT id, title, description, funding_source, status FROM projects
@@ -111,16 +99,6 @@ async function searchSite(db, rawQuery) {
       }))
     },
     {
-      key: 'notices',
-      label: '通知公告',
-      items: notices.map(item => ({
-        title: item.title,
-        excerpt: excerpt(item.content),
-        meta: item.publish_date || '',
-        url: '/notice/' + item.id
-      }))
-    },
-    {
       key: 'members',
       label: '团队成员',
       items: members.map(item => ({
@@ -128,16 +106,6 @@ async function searchSite(db, rawQuery) {
         excerpt: excerpt(item.bio, item.destination || item.research_area),
         meta: [item.member_type === 'student' ? '学生' : '教师', item.title, item.research_area].filter(Boolean).join(' · '),
         url: '/team/' + item.id
-      }))
-    },
-    {
-      key: 'research',
-      label: '研究方向',
-      items: areas.map(item => ({
-        title: item.title,
-        excerpt: excerpt(item.description),
-        meta: '实验室简介',
-        url: '/about#intro'
       }))
     },
     {

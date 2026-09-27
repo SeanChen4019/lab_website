@@ -39,8 +39,6 @@
     banner: '首页轮播图',
     team: '团队成员',
     news: '新闻文章',
-    notice: '通知公告',
-    'research-area': '研究方向',
     project: '科研项目',
     download: '下载资源',
     'page-content': '页面文案'
@@ -120,35 +118,6 @@
         { key:'is_active', label:'前台显示', type:'checkbox' }
       ],
       defaults: { title:'', category:'research', publish_date:new Date().toISOString().slice(0,10), summary:'', image_url:'', content:'<p></p>', is_top:0, is_active:1 }
-    },
-    notice: {
-      endpoint: '/api/notices',
-      collection: 'notices',
-      title: item => item.title || '未命名通知',
-      subtitle: item => item.publish_date || '',
-      fields: [
-        { key:'title', label:'通知标题', required:true, full:true },
-        { key:'publish_date', label:'发布日期', type:'date' },
-        { key:'link_url', label:'相关链接' },
-        { key:'content', label:'通知正文', type:'rich', full:true },
-        { key:'is_top', label:'置顶显示', type:'checkbox' },
-        { key:'is_active', label:'前台显示', type:'checkbox' }
-      ],
-      defaults: { title:'', publish_date:new Date().toISOString().slice(0,10), link_url:'', content:'<p></p>', is_top:0, is_active:1 }
-    },
-    'research-area': {
-      endpoint: '/api/research-areas',
-      collection: 'areas',
-      title: item => item.title || '未命名研究方向',
-      subtitle: item => item.description || '',
-      fields: [
-        { key:'title', label:'研究方向名称', required:true, full:true },
-        { key:'description', label:'方向说明', type:'textarea', required:true, full:true },
-        { key:'icon', label:'图标名称', hint:'例如 satellite、wifi、brain' },
-        { key:'sort_order', label:'显示顺序', type:'number' },
-        { key:'is_active', label:'前台显示', type:'checkbox' }
-      ],
-      defaults: { title:'', description:'', icon:'satellite', sort_order:0, is_active:1 }
     },
     project: {
       endpoint: '/api/projects',

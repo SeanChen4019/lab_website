@@ -62,7 +62,7 @@ router.post('/accounts/:id/reset-password',wrap(async(req,res)=>{
 // 删除普通管理员账号：资料收回、草稿清空、会话失效，然后删账号
 router.delete('/accounts/:id',wrap(async(req,res)=>{
  const target=id(req.params.id);
- const owned=['team_members','news','notices','papers','projects','patents','downloads'];
+ const owned=['team_members','news','papers','projects','patents','downloads'];
  await db.transaction(tx=>{
    const user=tx.get('SELECT * FROM admins WHERE id=?',[target]);
    if(!user)throw error('账号不存在',404);

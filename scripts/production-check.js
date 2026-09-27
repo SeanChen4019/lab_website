@@ -26,7 +26,6 @@ const requiredPaths = [
   'services/site-search.js',
   'views/index.ejs',
   'views/search.ejs',
-  'views/notices.ejs',
   'views/team-detail.ejs',
   'views/admin/visual.ejs',
   'views/admin/publish.ejs'
@@ -42,7 +41,7 @@ async function main() {
     "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name"
   );
   const tableNames = new Set(tables.map(item => item.name));
-  const requiredTables = ['submissions','auth_sessions','schema_migrations','admins', 'alumni', 'banners', 'downloads', 'news', 'notices', 'projects', 'research_areas', 'settings', 'team_members'];
+  const requiredTables = ['submissions','auth_sessions','schema_migrations','admins', 'alumni', 'banners', 'downloads', 'news', 'projects', 'settings', 'team_members'];
   const missingTables = requiredTables.filter(name => !tableNames.has(name));
   if (missingTables.length) {
     throw new Error('数据库缺少数据表：' + missingTables.join(', '));

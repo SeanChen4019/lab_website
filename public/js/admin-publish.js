@@ -51,10 +51,7 @@
       option.classList.toggle('active', option.querySelector('input').checked);
     });
     document.querySelectorAll('.news-only').forEach(element => { element.hidden = type !== 'news'; });
-    document.querySelectorAll('.notice-only').forEach(element => { element.hidden = type !== 'notice'; });
-    submitButton.innerHTML = type === 'notice'
-      ? '<i class="fas fa-paper-plane"></i> 立即发布通知'
-      : '<i class="fas fa-paper-plane"></i> 立即发布新闻';
+    submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> 立即发布新闻';
   }
 
   function draftPayload() {
@@ -161,18 +158,16 @@
       is_top: document.getElementById('publishTop').checked ? 1 : 0,
       is_active: 1
     };
-    const payload = type === 'news'
-      ? Object.assign(common, {
-          category: document.getElementById('publishCategory').value,
-          summary: document.getElementById('publishSummary').value.trim() || contentText.slice(0, 180),
-          image_url: document.getElementById('publishCover').value.trim()
-        })
-      : Object.assign(common, { link_url: document.getElementById('publishLink').value.trim() });
+    const payload = Object.assign(common, {
+      category: document.getElementById('publishCategory').value,
+      summary: document.getElementById('publishSummary').value.trim() || contentText.slice(0, 180),
+      image_url: document.getElementById('publishCover').value.trim()
+    });
 
     submitButton.disabled = true;
     submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在发布…';
     try {
-      const response = await fetch(type === 'news' ? '/api/news' : '/api/notices', {
+      const response = await fetch('/api/news', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -184,7 +179,7 @@
       if (!response.ok || !data.success) throw new Error(data.message || '发布失败');
       localStorage.removeItem(draftKey);
       document.getElementById('publishSuccessTitle').textContent = title;
-      document.getElementById('publishViewLink').href = data.url || (type === 'news' ? '/news/' : '/notice/') + data.id;
+      document.getElementById('publishViewLink').href = data.url || '/news/' + data.id;
       successPanel.dataset.publishedId = data.id;
       successPanel.dataset.publishedType = type;
       successPanel.hidden = false;

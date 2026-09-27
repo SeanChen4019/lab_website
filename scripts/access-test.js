@@ -16,7 +16,7 @@ const user=check(await call('/auth/login','POST',{username:a.username,password:p
 for(const endpoint of ['/news','/team','/papers','/settings','/accounts','/reviews','/stats','/banners'])check(await call(endpoint,'GET',null,user),403);
 check(await call('/news','POST',{title:'forbidden'},user),403);check(await call('/settings','PUT',{site_name:'forbidden'},user),403);
 const schemas=check(await call('/contributions/schema','GET',null,user)).types;
-const fixtures={team:{name:'审核教师',member_type:'teacher',email:'a@example.org',resume:'测试履历'},papers:{title:'审核论文',year:2026,authors:'Test Author'},news:{title:'审核新闻',content:'<p>正文</p><script>bad()</script>'},notices:{title:'审核通知'},projects:{title:'审核项目'},patents:{title:'审核专利'},downloads:{title:'审核资源',file_url:'https://example.org/data.zip'}};
+const fixtures={team:{name:'审核教师',member_type:'teacher',email:'a@example.org',resume:'测试履历'},papers:{title:'审核论文',year:2026,authors:'Test Author'},news:{title:'审核新闻',content:'<p>正文</p><script>bad()</script>'},projects:{title:'审核项目'},patents:{title:'审核专利'},downloads:{title:'审核资源',file_url:'https://example.org/data.zip'}};
 for(const [type,payload]of Object.entries(fixtures)){
  const created=check(await call('/contributions','POST',{type,payload,status:'pending'},user),201);const review=check(await call('/reviews','GET',null,token)).submissions.find(x=>x.id===created.id);
  check(await call('/contributions/'+created.id,'PUT',{payload,version:review.version,status:'draft'},other),404);
