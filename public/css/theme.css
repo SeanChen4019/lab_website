@@ -1429,3 +1429,27 @@ body,
  .is-inner { --inner-banner-height:260px; --inner-tabs-height:50px; }
  .is-inner .page-banner .container { padding-top:128px; }
 }
+
+/* ==========================================================================
+   第十六部分 · 内页 banner 的遮罩改成跟首页 hero 一致
+   ==========================================================================
+   两边用的是**同一张图**（首页第一张轮播图就是 nuaa-wutong-road-hd.jpg），
+   但遮罩不一样，所以观感差很多：
+
+     首页 .is-home .hero-slide:before（refinement.css:19）
+       linear-gradient(90deg, rgba(5,24,43,.79), rgba(5,24,43,.24) 70%)   ← 右侧只剩 24%
+     内页 .is-inner .page-banner（refinement.css:141）
+       linear-gradient(90deg, rgba(10,34,52,.9),  rgba(10,34,52,.55))    ← 右侧还压着 55%
+
+   结果：首页透亮，内页像蒙了层灰。这里把内页换成首页那套渐变。
+   高度仍由用户自己的 --inner-banner-height 控制，未改动。
+   ========================================================================== */
+.is-inner .page-banner {
+  background-image:
+    linear-gradient(90deg, rgba(5, 24, 43, .79), rgba(5, 24, 43, .24) 70%),
+    linear-gradient(0deg, rgba(5, 24, 43, .3), transparent 60%),
+    url('/images/official/nuaa-wutong-road-hd.jpg') !important;
+  background-size: cover !important;
+  background-position: center 48% !important;
+  background-repeat: no-repeat !important;
+}
