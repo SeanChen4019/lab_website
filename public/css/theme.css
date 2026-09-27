@@ -1252,3 +1252,54 @@ body,
   .hero-actions a { font-size: 14px !important; padding: 11px 10px !important; gap: 6px !important; }
   .hero-actions a span { font-size: 15px !important; }
 }
+
+/* ==========================================================================
+   第十二部分 · 首页 hero 自适应修正
+   ==========================================================================
+   原来的写法有两个硬伤：
+
+   ① hero 高度按视口高算（clamp(480px, 64vh, 640px)），但里面的标题字号按
+      视口【宽】算（4.4vw）。笔记本普遍是「宽而矮」（1366×768），
+      结果字号取到最大值 60px，高度却只有 492px —— 内容装不下，
+      而 .hero 是 overflow:hidden，底部按钮直接被裁掉一半。
+
+   ② .hero-dots 是 absolute bottom:44px，内容一旦变高就压到按钮上。
+      实测 1366×768 下圆点比按钮底部还高 70px，也就是整个压在按钮上。
+
+   修法：高度改成「内容驱动 + 最小高度」，并给内容留出底部空间；
+   标题字号同时受视口高度约束，避免矮屏上字太大。
+   ========================================================================== */
+
+/* 标题字号同时受宽度和高度约束：矮屏自动收小 */
+:root {
+  --fs-hero: min(clamp(40px, 4.4vw, 60px), 7.2vh);
+}
+
+.is-home .hero {
+  height: auto !important;                            /* 不再写死，让内容撑开 */
+  min-height: clamp(500px, 64vh, 660px) !important;   /* 宽屏时至少这么高 */
+}
+
+.hero-intro {
+  /* 顶部：必须让开压在 hero 上的绝对定位导航栏。
+     实测 .site-header 在桌面端固定高 166px，所以要 >=166 + 20px 净空 = 186px，
+     给少了副标题会钻到导航栏里去。 */
+  padding-top: clamp(186px, 21vh, 210px) !important;
+  /* 底部：给 .hero-dots（absolute bottom:44px，高约 28px）留出净空，
+     否则圆点会叠在按钮上 */
+  padding-bottom: clamp(92px, 11vh, 120px) !important;
+}
+
+/* 矮屏再收一档间距，让 hero 尽量紧凑 */
+@media (max-height: 800px) and (min-width: 901px) {
+  .hero-intro p { margin-top: 14px !important; margin-bottom: 20px !important; }
+  .hero-actions a { padding-top: 14px !important; padding-bottom: 14px !important; }
+}
+
+/* 手机上导航不是压在上面的，顶部可以更紧 */
+@media (max-width: 900px) {
+  .hero-intro {
+    padding-top: clamp(120px, 16vh, 160px) !important;
+    padding-bottom: clamp(84px, 12vh, 110px) !important;
+  }
+}
